@@ -575,9 +575,12 @@ class Client:
             salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
             line = nickname + ' ' + salt + ' ' + hashed_password
             if oper:
-                line += ' oper'                
+                line += ' oper'
+            writeMode = 'a+'
+            if not os.path.isfile(self.server.passwords_filename):
+                writeMode = 'w+'
             try:
-                with open(self.server.passwords_filename, 'a+') as fp:
+                with open(self.server.passwords_filename, writeMode) as fp:
                     fp.write(line + '\n')
             except BaseException:
                 return False
@@ -687,10 +690,12 @@ class Client:
                     self.is_operator = True
 
         def msg_handler() -> None:
+            print('msg_handler 1')
             if len(arguments) < 1:
                 self.reply(b"731 :No command")
                 return
             cmdStr = arguments[0].decode('utf-8').lower()
+            print('msg_handler 2 ' + cmdStr)
             if cmdStr == 'nickserv':
                 self._msg_nickserv(arguments)
 
