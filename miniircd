@@ -503,7 +503,7 @@ class Client:
                 return
             if len(arguments) < 1:
                 self.reply(b"431 :No nickname given")
-                return            
+                return
             kicknick = arguments[0]
             if kicknick == self.nickname:
                 pass
@@ -540,7 +540,7 @@ class Client:
                 return
             if len(arguments) < 1:
                 self.reply(b"431 :No nickname given")
-                return            
+                return
             kicknick = arguments[0]
             if kicknick in self.server.banned_nicknames:
                 self.server.banned_nicknames.remove(kicknick)
@@ -575,7 +575,7 @@ class Client:
             except BaseException:
                 return False
             self.server.passwords_filename_lock = False
-            return True            
+            return True
 
         def _password_entry(nickname: str) -> str:
             if not os.path.isfile(self.server.passwords_filename):
@@ -592,7 +592,7 @@ class Client:
             return None
 
         def _get_salt(nickname: str) -> str:
-            line = _password_entry(nickname)            
+            line = _password_entry(nickname)
             if not line:
                 return None
             if ' ' not in line:
@@ -600,13 +600,13 @@ class Client:
             return line.split(' ')[1]
 
         def _is_op(nickname: str, salt: str, hashed_password: str) -> bool:
-            line = _password_entry(nickname)            
+            line = _password_entry(nickname)
             if not line:
                 return False
             return line == nickname + ' ' + salt + ' ' + hashed_password + ' oper\n'
 
         def _is_registered(nickname: str, salt: str, hashed_password: str) -> bool:
-            line = _password_entry(nickname)            
+            line = _password_entry(nickname)
             if not line:
                 return False
             return line == nickname + ' ' + salt + ' ' + hashed_password + '\n'
@@ -618,7 +618,7 @@ class Client:
                 return 1
             return 0
 
-        def _msg_nickserv(arguments) -> None:            
+        def _msg_nickserv(arguments) -> None:
             cmdStr = arguments[0]
             if len(arguments) < 2:
                 self.reply(
@@ -627,7 +627,7 @@ class Client:
                 )
                 return
             cmdTypeStr = arguments[1]
-            if cmdTypeStr.decode('utf-8').lower() == 'register':                
+            if cmdTypeStr.decode('utf-8').lower() == 'register':
                 if len(arguments) < 3:
                     self.reply(
                         b"464 %s %s :No password"
