@@ -355,7 +355,7 @@ class Client:
         pwdhash = binascii.hexlify(pwdhash)
         return pwdhash.decode('ascii')
 
-    def __register(self, nickname: str, password: str, oper=False) -> bool:
+    def __register(self, nickname: str, hashed_password: str, oper=False) -> bool:
         if nickname.endswith('_'):
             return False
         if self.server.write_lock:
@@ -363,7 +363,7 @@ class Client:
         if not os.path.isfile(self.server.passwords_filename):
             oper = True
         self.server.write_lock = True
-        salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
+        salt = hashlib.sha256(os.urandom(60)).hexdigest()
         line = nickname + ' ' + salt + ' ' + hashed_password
         if oper:
             line += ' oper'
@@ -430,7 +430,8 @@ class Client:
         if salt:
             self.reply(b"462 %s :Already registered" % (self.nickname))
             return
-        if not self.__register(register_nick, password):
+        hashed_password = __hash_password(salt, password)
+        if not self.__register(register_nick, hashed_password):
             self.reply(b"424 %s :File error" % (self.nickname))
             self.server.write_lock = False
             return
