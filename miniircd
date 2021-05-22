@@ -422,32 +422,33 @@ class Client:
             return 1
         return 0
 
-    def __msg_nickserv_register(self, password: str) -> None:
+    def __msg_nickserv_register(self, password: str) -> bool:
         register_nick = self.nickname.decode('utf-8')
         if register_nick.endswith('_'):
             self.reply(
                 b"431 %s :Nick contains invalid characters"
                 % (self.nickname))
-            return
+            return False
         salt = self.__get_salt(register_nick)
         if salt:
             self.reply(b"462 %s :Already registered" % (self.nickname))
-            return
+            return False
         salt = hashlib.sha256(os.urandom(60)).hexdigest()        
         hashed_password = self.__hash_password(salt, password)
         if not self.__register(register_nick, salt, hashed_password):
             self.reply(b"424 %s :File error" % (self.nickname))
             self.server.write_lock = False
-            return
+            return False
+        return True
 
-    def __msg_nickserv_identify(self, password: str) -> None:
+    def __msg_nickserv_identify(self, password: str) -> bool:
         identify_nick = self.nickname.decode('utf-8')
         salt = self.__get_salt(identify_nick)
         if not salt:
             self.reply(b"406 %s :Not registered" % self.nickname)
             self.is_operator = False
             self.is_registered = False
-            return
+            return False
         hashed_password = self.__hash_password(salt, password)
         retval = self.__identify(identify_nick, salt, hashed_password)
         if retval > 0:
@@ -458,6 +459,8 @@ class Client:
             self.is_operator = False
             self.is_registered = False
             self.reply(b"401 %s :No such nick" % self.nickname)
+            return False
+        return True
 
     def __command_handler(
         self, command: bytes, arguments: Sequence[bytes]
@@ -676,7 +679,10 @@ class Client:
                 self.reply_461(b"REGISTER")
                 return
             password = arguments[0].decode('utf-8')
-            self.__msg_nickserv_register(password)
+            if self.__msg_nickserv_register(password):
+                self.message((f"Register success").encode())
+            else:
+                self.message((f"Register failed").encode())
 
         def identify_handler() -> None:
             if len(arguments) < 1:
@@ -685,7 +691,10 @@ class Client:
                 self.is_registered = False
                 return
             password = arguments[0].decode('utf-8').lower()
-            self.__msg_nickserv_identify(password)
+            if self.__msg_nickserv_identify(password):
+                self.message((f"Identify success").encode())
+            else:
+                self.message((f"Identify failed").encode())
 
         def notice_and_privmsg_handler() -> None:
             if len(arguments) == 0:
