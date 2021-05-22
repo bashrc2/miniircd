@@ -454,7 +454,7 @@ class Client:
             self.is_registered = True
         if retval > 1:
             self.is_operator = True
-        elif retval == 0:
+        if retval == 0:
             self.is_operator = False
             self.is_registered = False
             self.reply(b"401 %s :No such nick" % (self.nickname))
