@@ -44,7 +44,7 @@ Installation
 
 No special installation needed: Just clone the repository and execute miniircd:
 
-    git clone https://gitlan.com/bashrc2/miniircd.git
+    git clone https://gitlab.com/bashrc2/miniircd.git
     cd miniircd
     ./miniircd --help
 
