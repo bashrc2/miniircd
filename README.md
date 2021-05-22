@@ -19,6 +19,8 @@ Features
 * No ident lookup (so that people behind firewalls that filter the ident port
   without sending NACK can connect without long timeouts).
 * Reasonably secure when used with --chroot and --setuid.
+* register/identify accounts
+* opers can kickban
 
 
 Limitations
@@ -26,11 +28,9 @@ Limitations
 
 * Can't connect to other IRC servers.
 * Only knows the most basic IRC commands.
-* No IRC operators.
 * No channel operators.
 * No user or channel modes except channel key.
 * No reverse DNS lookup.
-* No other mechanism to reject clients than requiring a password.
 
 
 Requirements
@@ -119,6 +119,34 @@ should look something like this:
     crw-rw-rw- 1 root   root   1, 9 Jun 10 16:19 urandom
 
 
+Registering accounts
+--------------------
+
+To register an account:
+
+    /register [password]
+
+To identify yourself connect with your previous nick, then:
+
+    /identify [password]
+	
+The first account to be registered gets oper status.
+
+A passwords file in the state directory contains password hashes. The word "oper" is appended to any accounts with oper status.
+
+
+Basic moderation
+----------------
+
+To kick other users you must have oper status. Identify yourself with a password, as above, then to kick:
+
+    /kick [nickname]
+	
+Unlike most IRC servers kicking disconnects the user from all channels. This is intended for small scale use where you may only have a few channels on the server and you want minimum administrative overhead. If you made a mistake then you can:
+
+    /unban [nickname]
+
+
 License
 -------
 
@@ -135,6 +163,7 @@ Contributors
 ------------
 
 - Alex Wright
+- Bob Mottram
 - Braxton Plaxco
 - Hanno Foest
 - Jan Fuchs
