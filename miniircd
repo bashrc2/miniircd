@@ -64,9 +64,11 @@ class Channel:
             self._state_path = None
 
     def add_member(self, client: "Client") -> bool:
-        if len(self.members) < self.server.max_clients:
-            self.members.add(client)
-            return True
+        if self.server.total_members < self.server.max_clients:
+            if len(self.members) < self.server.max_clients:
+                self.members.add(client)
+                self.server.total_members += 1
+                return True
         return False
 
     @property
@@ -89,6 +91,9 @@ class Channel:
 
     def remove_client(self, client: "Client") -> None:
         self.members.discard(client)
+        self.server.total_members -= 1
+        if self.server.total_members < 0:
+            self.server.total_members = 0
         if not self.members:
             self.server.remove_channel(self)
 
@@ -299,7 +304,7 @@ class Client:
                         )
                 else:
                     self.reply(
-                        b"404 %s %s :Maximum clients in channel"
+                        b"404 %s %s :Maximum clients on server"
                         % (self.nickname, channel.name)
                     )
                     continue
@@ -821,6 +826,7 @@ class Server:
         self.cloak = args.cloak
         self.max_clients = args.max_clients
         self.max_channels = args.max_channels
+        self.total_members = 0
         self.name: bytes
 
         if args.password_file:
@@ -1122,7 +1128,7 @@ def main() -> None:
         "--max-clients",
         default=128,
         type=int,
-        help="Maximum clients per channel",
+        help="Maximum clients on the server",
     )
     ap.add_argument(
         "--max-channels",
