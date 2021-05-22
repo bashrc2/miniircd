@@ -63,8 +63,11 @@ class Channel:
         else:
             self._state_path = None
 
-    def add_member(self, client: "Client") -> None:
-        self.members.add(client)
+    def add_member(self, client: "Client") -> bool:
+        if len(self.members) < self.server.max_clients:
+            self.members.add(client)
+            return True
+        return False
 
     @property
     def topic(self) -> bytes:
@@ -265,9 +268,14 @@ class Client:
                 self.reply_403(channelname)
                 continue
             channel = server.get_channel(channelname)
-            if channel.key is not None and (
-                len(keys) <= i or channel.key != keys[i]
-            ):
+            if not channel:
+                self.reply(
+                    b"405 %s %s :Too many channels"
+                    % (self.nickname, channelname)
+                )
+                continue
+            elif channel.key is not None and \
+               (len(keys) <= i or channel.key != keys[i]):
                 self.reply(
                     b"475 %s %s :Cannot join channel (+k) - bad key"
                     % (self.nickname, channelname)
@@ -275,20 +283,26 @@ class Client:
                 continue
 
             if for_join:
-                channel.add_member(self)
-                self.channels[irc_lower(channelname)] = channel
-                self.message_channel(channel, b"JOIN", channelname, True)
-                self.channel_log(channel, b"joined", meta=True)
-                if channel.topic:
-                    self.reply(
-                        b"332 %s %s :%s"
-                        % (self.nickname, channel.name, channel.topic)
-                    )
+                if channel.add_member(self):
+                    self.channels[irc_lower(channelname)] = channel
+                    self.message_channel(channel, b"JOIN", channelname, True)
+                    self.channel_log(channel, b"joined", meta=True)
+                    if channel.topic:
+                        self.reply(
+                            b"332 %s %s :%s"
+                            % (self.nickname, channel.name, channel.topic)
+                        )
+                    else:
+                        self.reply(
+                            b"331 %s %s :No topic is set"
+                            % (self.nickname, channel.name)
+                        )
                 else:
                     self.reply(
-                        b"331 %s %s :No topic is set"
+                        b"404 %s %s :Maximum clients in channel"
                         % (self.nickname, channel.name)
                     )
+                    continue
             names_prefix = b"353 %s = %s :" % (self.nickname, channelname)
             names = b""
             # Max length: reply prefix ":server_name(space)" plus CRLF in
@@ -805,6 +819,8 @@ class Server:
         self.log_count = args.log_count
         self.logger: Optional[logging.Logger] = None
         self.cloak = args.cloak
+        self.max_clients = args.max_clients
+        self.max_channels = args.max_channels
         self.name: bytes
 
         if args.password_file:
@@ -887,8 +903,11 @@ class Server:
         if irc_lower(channelname) in self.channels:
             channel = self.channels[irc_lower(channelname)]
         else:
-            channel = Channel(self, channelname)
-            self.channels[irc_lower(channelname)] = channel
+            if len(self.channels.items()) < self.max_channels:
+                channel = Channel(self, channelname)
+                self.channels[irc_lower(channelname)] = channel
+            else:
+                channel = None
         return channel
 
     def get_motd_lines(self) -> Collection[str]:
@@ -1098,6 +1117,18 @@ def main() -> None:
         default=10,
         type=int,
         help="set maximum log file size to X MiB; default: %(default)s MiB",
+    )
+    ap.add_argument(
+        "--max-clients",
+        default=128,
+        type=int,
+        help="Maximum clients per channel",
+    )
+    ap.add_argument(
+        "--max-channels",
+        default=8,
+        type=int,
+        help="Maximum number of channels",
     )
     ap.add_argument(
         "--motd", metavar="X", help="display file X as message of the day"
