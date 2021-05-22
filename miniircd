@@ -348,6 +348,108 @@ class Client:
                 b"366 %s %s :End of NAMES list" % (self.nickname, channelname)
             )
 
+    def __hash_password(self, salt: str, password: str) -> str:
+        pwdhash = hashlib.pbkdf2_hmac('sha512',
+                                      password.encode('utf-8'),
+                                      salt, 100000)
+        pwdhash = binascii.hexlify(pwdhash)
+        return pwdhash.decode('ascii')
+
+    def __register(self, nickname: str, password: str, oper=False) -> bool:
+        if nickname.endswith('_'):
+            return False
+        if self.server.write_lock:
+            return False
+        if not os.path.isfile(self.server.passwords_filename):
+            oper = True
+        self.server.write_lock = True
+        salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
+        line = nickname + ' ' + salt + ' ' + hashed_password
+        if oper:
+            line += ' oper'
+        writeMode = 'a+'
+        if not os.path.isfile(self.server.passwords_filename):
+            writeMode = 'w+'
+        try:
+            with open(self.server.passwords_filename, writeMode) as fp:
+                fp.write(line + '\n')
+        except BaseException:
+            return False
+        self.server.write_lock = False
+        return True
+
+    def __password_entry(self, nickname: str) -> str:
+        if not os.path.isfile(self.server.passwords_filename):
+            return None
+        lines = []
+        try:
+            with open(self.server.passwords_filename, 'r') as fp:
+                lines = fp.readlines()
+        except BaseException:
+            return None
+        for line in lines:
+            if line.startswith(nickname + ' '):
+                return line
+        return None
+
+    def __get_salt(self, nickname: str) -> str:
+        line = self.__password_entry(nickname)
+        if not line:
+            return None
+        if ' ' not in line:
+            return None
+        return line.split(' ')[1]
+
+    def __is_op(self, nickname: str, salt: str, hashed_password: str) -> bool:
+        line = self.__password_entry(nickname)
+        if not line:
+            return False
+        return line == nickname + ' ' + salt + ' ' + hashed_password + ' oper\n'
+
+    def __is_registered(self, nickname: str, salt: str, hashed_password: str) -> bool:
+        line = self.__password_entry(nickname)
+        if not line:
+            return False
+        return line == nickname + ' ' + salt + ' ' + hashed_password + '\n'
+
+    def __identify(self, nickname: str, salt: str, hashed_password: str) -> int:
+        if self.__is_op(nickname, salt, hashed_password):
+            return 2
+        elif self.__is_registered(nickname, salt, hashed_password):
+            return 1
+        return 0
+
+    def __msg_nickserv_register(self, password: str) -> None:
+        register_nick = self.nickname.decode('utf-8')
+        if register_nick.endswith('_'):
+            self.reply(
+                b"431 %s :Nick contains invalid characters"
+                % (self.nickname))
+            return
+        salt = self.__get_salt(register_nick)
+        if salt:
+            self.reply(b"462 %s :Already registered" % (self.nickname))
+            return
+        if not self.__register(register_nick, password):
+            self.reply(b"424 %s :File error" % (self.nickname))
+            self.server.write_lock = False
+            return
+
+    def __msg_nickserv_identify(self, password: str) -> None:
+        identify_nick = self.nickname.decode('utf-8')
+        salt = self.__get_salt(identify_nick)
+        if not salt:
+            self.reply(b"406 %s :Not registered" % (self.nickname))
+            return
+        hashed_password = __hash_password(salt, password)
+        retval = self.__identify(identify_nick, salt, hashed_password)
+        if retval > 0:
+            self.is_registered = True
+        if retval > 1:
+            self.is_operator = True
+        elif retval == 0:
+            self.reply(b"401 %s :No such nick" % (self.nickname))
+
     def __command_handler(
         self, command: bytes, arguments: Sequence[bytes]
     ) -> None:
@@ -572,147 +674,19 @@ class Client:
                     % (self.nickname, kicknick)
                 )
 
-        def _hash_password(salt: str, password: str) -> str:
-            pwdhash = hashlib.pbkdf2_hmac('sha512',
-                                          password.encode('utf-8'),
-                                          salt, 100000)
-            pwdhash = binascii.hexlify(pwdhash)
-            return pwdhash.decode('ascii')
-
-        def _register(nickname: str, password: str, oper=False) -> bool:
-            if nickname.endswith('_'):
-                return False
-            if self.server.write_lock:
-                return False
-            if not os.path.isfile(self.server.passwords_filename):
-                oper = True
-            self.server.write_lock = True
-            salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
-            line = nickname + ' ' + salt + ' ' + hashed_password
-            if oper:
-                line += ' oper'
-            writeMode = 'a+'
-            if not os.path.isfile(self.server.passwords_filename):
-                writeMode = 'w+'
-            try:
-                with open(self.server.passwords_filename, writeMode) as fp:
-                    fp.write(line + '\n')
-            except BaseException:
-                return False
-            self.server.write_lock = False
-            return True
-
-        def _password_entry(nickname: str) -> str:
-            if not os.path.isfile(self.server.passwords_filename):
-                return None
-            lines = []
-            try:
-                with open(self.server.passwords_filename, 'r') as fp:
-                    lines = fp.readlines()
-            except BaseException:
-                return None
-            for line in lines:
-                if line.startswith(nickname + ' '):
-                    return line
-            return None
-
-        def _get_salt(nickname: str) -> str:
-            line = _password_entry(nickname)
-            if not line:
-                return None
-            if ' ' not in line:
-                return None
-            return line.split(' ')[1]
-
-        def _is_op(nickname: str, salt: str, hashed_password: str) -> bool:
-            line = _password_entry(nickname)
-            if not line:
-                return False
-            return line == nickname + ' ' + salt + ' ' + hashed_password + ' oper\n'
-
-        def _is_registered(nickname: str, salt: str, hashed_password: str) -> bool:
-            line = _password_entry(nickname)
-            if not line:
-                return False
-            return line == nickname + ' ' + salt + ' ' + hashed_password + '\n'
-
-        def identify(nickname: str, salt: str, hashed_password: str) -> int:
-            if _is_op(nickname, salt, hashed_password):
-                return 2
-            elif _is_registered(nickname, salt, hashed_password):
-                return 1
-            return 0
-
-        def _msg_nickserv(arguments) -> None:
-            cmdStr = arguments[0]
-            if len(arguments) < 2:
-                self.reply(
-                    b"421 %s %s :No command type"
-                    % (self.nickname, cmdStr)
-                )
-                return
-            cmdTypeStr = arguments[1]
-            if cmdTypeStr.decode('utf-8').lower() == 'register':
-                if len(arguments) < 3:
-                    self.reply(
-                        b"464 %s %s :No password"
-                        % (cmdStr, cmdTypeStr)
-                    )
-                    return
-                password = arguments[2].decode('utf-8')
-                register_nick = self.nickname.decode('utf-8')
-                if register_nick.endswith('_'):
-                    self.reply(
-                        b"431 %s %s :Nick contains invalid characters"
-                        % (self.nickname, cmdTypeStr)
-                    )
-                    return
-                salt = _get_salt(register_nick)
-                if salt:
-                    self.reply(
-                        b"462 %s %s :Already registered"
-                        % (self.nickname, cmdTypeStr)
-                    )
-                    return
-                if not self._register(register_nick, password):
-                    self.reply(
-                        b"424 %s %s :File error"
-                        % (self.nickname, cmdTypeStr)
-                    )
-                    self.server.write_lock = False
-                    return
-            elif cmdTypeStr.decode('utf-8').lower() == 'identify':
-                if len(arguments) < 3:
-                    self.reply(
-                        b"464 %s %s :No password"
-                        % (cmdStr, cmdTypeStr)
-                    )
-                    return
-                password = arguments[2].decode('utf-8')
-                identify_nick = self.nickname.decode('utf-8')
-                salt = _get_salt(identify_nick)
-                if not salt:
-                    self.reply(
-                        b"406 %s %s :Not registered"
-                        % (self.nickname, cmdTypeStr)
-                    )
-                    return
-                hashed_password = _hash_password(salt, password)
-                retval = self.identify(identify_nick, salt, hashed_password)
-                if retval > 0:
-                    self.is_registered = True
-                if retval > 1:
-                    self.is_operator = True
-
-        def msg_handler() -> None:
-            print('msg_handler 1')
+        def register_handler() -> None:
             if len(arguments) < 1:
                 self.reply(b"731 :No command")
                 return
-            cmdStr = arguments[0].decode('utf-8').lower()
-            print('msg_handler 2 ' + cmdStr)
-            if cmdStr == 'nickserv':
-                self._msg_nickserv(arguments)
+            password = arguments[0].decode('utf-8')
+            self.__msg_nickserv_register(password)
+
+        def identify_handler() -> None:
+            if len(arguments) < 1:
+                self.reply(b"731 :No command")
+                return
+            password = arguments[0].decode('utf-8').lower()
+            self.__msg_nickserv_identify(password)
 
         def notice_and_privmsg_handler() -> None:
             if len(arguments) == 0:
@@ -896,6 +870,7 @@ class Client:
 
         handler_table = {
             b"AWAY": away_handler,
+            b"IDENTIFY": identify_handler,
             b"ISON": ison_handler,
             b"JOIN": join_handler,
             b"KICK": kick_handler,
@@ -906,12 +881,12 @@ class Client:
             b"NAMES": names_handler,
             b"NICK": nick_handler,
             b"NOTICE": notice_and_privmsg_handler,
-            b"MSG": msg_handler,
             b"PART": part_handler,
             b"PING": ping_handler,
             b"PONG": pong_handler,
             b"PRIVMSG": notice_and_privmsg_handler,
             b"QUIT": quit_handler,
+            b"REGISTER": register_handler,
             b"TOPIC": topic_handler,
             b"UNBAN": unban_handler,
             b"WALLOPS": wallops_handler,
