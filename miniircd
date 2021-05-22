@@ -614,10 +614,7 @@ class Client:
 
         def kick_handler() -> None:
             if not self.is_operator:
-                self.reply(
-                    b"481 %s :Permission denied"
-                    % (self.nickname)
-                )
+                self.reply(b"481 %s :Permission denied" % (self.nickname))
                 return
             if len(arguments) < 1:
                 self.reply_461(b"KICK")
