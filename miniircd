@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #
 # Copyright (C) 2003-2021 Joel Rosdahl
+# Copyright (C) 2021 Bob Mottram
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +19,7 @@
 # USA
 #
 # Joel Rosdahl <joel@rosdahl.net>
+# Bob Mottram <bob@freedombone.net>
 
 import logging
 import os
@@ -28,6 +30,8 @@ import string
 import sys
 import tempfile
 import time
+import hashlib
+import binascii
 
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
@@ -137,6 +141,8 @@ class Client:
         self.nickname = b""
         self.user = b""
         self.realname = b""
+        self.is_operator = False
+        self.is_registered = False
         if self.server.ipv6:
             host, port, _, _ = socket.getpeername()
         else:
@@ -288,23 +294,30 @@ class Client:
                 continue
 
             if for_join:
-                if channel.add_member(self):
-                    self.channels[irc_lower(channelname)] = channel
-                    self.message_channel(channel, b"JOIN", channelname, True)
-                    self.channel_log(channel, b"joined", meta=True)
-                    if channel.topic:
-                        self.reply(
-                            b"332 %s %s :%s"
-                            % (self.nickname, channel.name, channel.topic)
-                        )
+                if self.nickname not in self.server.banned_nicknames:
+                    if channel.add_member(self):
+                        self.channels[irc_lower(channelname)] = channel
+                        self.message_channel(channel, b"JOIN", channelname, True)
+                        self.channel_log(channel, b"joined", meta=True)
+                        if channel.topic:
+                            self.reply(
+                                b"332 %s %s :%s"
+                                % (self.nickname, channel.name, channel.topic)
+                            )
+                        else:
+                            self.reply(
+                                b"331 %s %s :No topic is set"
+                                % (self.nickname, channel.name)
+                            )
                     else:
                         self.reply(
-                            b"331 %s %s :No topic is set"
+                            b"404 %s %s :Maximum clients on server"
                             % (self.nickname, channel.name)
                         )
+                        continue
                 else:
                     self.reply(
-                        b"404 %s %s :Maximum clients on server"
+                        b"474 %s %s :Banned"
                         % (self.nickname, channel.name)
                     )
                     continue
@@ -480,6 +493,199 @@ class Client:
                     % (oldnickname, self.user, self.host, self.nickname),
                     True,
                 )
+
+        def kick_handler() -> None:
+            if not self.is_operator:
+                self.reply(
+                    b"481 %s :Permission denied"
+                    % (self.nickname)
+                )
+                return
+            if len(arguments) < 1:
+                self.reply(b"431 :No nickname given")
+                return            
+            kicknick = arguments[0]
+            if kicknick == self.nickname:
+                pass
+            client = server.get_client(kicknick)
+            if client and client is self:
+                self.reply(
+                    b"433 %s %s :Nickname is already in use"
+                    % (self.nickname, kicknick)
+                )
+                return
+            if client.is_operator:
+                self.reply(
+                    b"481 %s %s :Permission denied"
+                    % (self.nickname, kicknick)
+                )
+                return
+            reason = b'kicked'
+            if len(arguments) > 1:
+                reason = b''
+                for index in range(1, len(arguments)):
+                    if index > 1:
+                        reason += b' '
+                    reason += arguments[1]
+            self.server.remove_client(client, reason)
+            if kicknick not in self.server.banned_nicknames:
+                self.server.banned_nicknames.append(kicknick)
+
+        def unban_handler() -> None:
+            if not self.is_operator:
+                self.reply(
+                    b"481 %s :Permission denied"
+                    % (self.nickname)
+                )
+                return
+            if len(arguments) < 1:
+                self.reply(b"431 :No nickname given")
+                return            
+            kicknick = arguments[0]
+            if kicknick in self.server.banned_nicknames:
+                self.server.banned_nicknames.remove(kicknick)
+            else:
+                self.reply(
+                    b"481 %s %s :Not on banned list"
+                    % (self.nickname, kicknick)
+                )
+
+        def _hash_password(salt: str, password: str) -> str:
+            pwdhash = hashlib.pbkdf2_hmac('sha512',
+                                          password.encode('utf-8'),
+                                          salt, 100000)
+            pwdhash = binascii.hexlify(pwdhash)
+            return pwdhash.decode('ascii')
+
+        def _register(nickname: str, password: str, oper=False) -> bool:
+            if nickname.endswith('_'):
+                return False
+            if self.server.passwords_filename_lock:
+                return False
+            if not os.path.isfile(self.server.passwords_filename):
+                oper = True
+            self.server.passwords_filename_lock = True
+            salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
+            line = nickname + ' ' + salt + ' ' + hashed_password
+            if oper:
+                line += ' oper'
+            try:
+                with open(self.server.passwords_filename, 'a+') as fp:
+                    fp.write(line + '\n')
+            except BaseException:
+                return False
+            self.server.passwords_filename_lock = False
+            return True            
+
+        def _password_entry(nickname: str) -> str:
+            if not os.path.isfile(self.server.passwords_filename):
+                return None
+            lines = []
+            try:
+                with open(self.server.passwords_filename, 'r') as fp:
+                    lines = fp.readlines()
+            except BaseException:
+                return None
+            for line in lines:
+                if line.startswith(nickname + ' '):
+                    return line
+            return None
+
+        def _get_salt(nickname: str) -> str:
+            line = _password_entry(nickname)            
+            if not line:
+                return None
+            if ' ' not in line:
+                return None
+            return line.split(' ')[1]
+
+        def _is_op(nickname: str, salt: str, hashed_password: str) -> bool:
+            line = _password_entry(nickname)            
+            if not line:
+                return False
+            return line == nickname + ' ' + salt + ' ' + hashed_password + ' oper\n'
+
+        def _is_registered(nickname: str, salt: str, hashed_password: str) -> bool:
+            line = _password_entry(nickname)            
+            if not line:
+                return False
+            return line == nickname + ' ' + salt + ' ' + hashed_password + '\n'
+
+        def identify(nickname: str, salt: str, hashed_password: str) -> int:
+            if _is_op(nickname, salt, hashed_password):
+                return 2
+            elif _is_registered(nickname, salt, hashed_password):
+                return 1
+            return 0
+
+        def _msg_nickserv(arguments) -> None:            
+            cmdStr = arguments[0]
+            if len(arguments) < 2:
+                self.reply(
+                    b"421 %s %s :No command type"
+                    % (self.nickname, cmdStr)
+                )
+                return
+            cmdTypeStr = arguments[1]
+            if cmdTypeStr.decode('utf-8').lower() == 'register':                
+                if len(arguments) < 3:
+                    self.reply(
+                        b"464 %s %s :No password"
+                        % (cmdStr, cmdTypeStr)
+                    )
+                    return
+                password = arguments[2].decode('utf-8')
+                register_nick = self.nickname.decode('utf-8')
+                if register_nick.endswith('_'):
+                    self.reply(
+                        b"431 %s %s :Nick contains invalid characters"
+                        % (self.nickname, cmdTypeStr)
+                    )
+                    return
+                salt = _get_salt(register_nick)
+                if salt:
+                    self.reply(
+                        b"462 %s %s :Already registered"
+                        % (self.nickname, cmdTypeStr)
+                    )
+                    return
+                if not self._register(register_nick, password):
+                    self.reply(
+                        b"424 %s %s :File error"
+                        % (self.nickname, cmdTypeStr)
+                    )
+                    self.server.passwords_filename_lock = False
+                    return
+            elif cmdTypeStr.decode('utf-8').lower() == 'identify':
+                if len(arguments) < 3:
+                    self.reply(
+                        b"464 %s %s :No password"
+                        % (cmdStr, cmdTypeStr)
+                    )
+                    return
+                password = arguments[2].decode('utf-8')
+                identify_nick = self.nickname.decode('utf-8')
+                salt = _get_salt(identify_nick)
+                if not salt:
+                    self.reply(
+                        b"406 %s %s :Not registered"
+                        % (self.nickname, cmdTypeStr)
+                    )
+                    return
+                hashed_password = _hash_password(salt, password)
+                retval = self.identify(identify_nick, salt, hashed_password)
+                if retval > 0:
+                    self.is_registered = True
+                if retval > 1:
+                    self.is_operator = True
+
+        def msg_handler() -> None:
+            if len(arguments) < 1:
+                self.reply(b"731 :No command")
+                return
+            cmdStr = arguments[0].decode('utf-8').lower()
+            if cmdStr == 'nickserv':
+                self._msg_nickserv(arguments)
 
         def notice_and_privmsg_handler() -> None:
             if len(arguments) == 0:
@@ -665,6 +871,7 @@ class Client:
             b"AWAY": away_handler,
             b"ISON": ison_handler,
             b"JOIN": join_handler,
+            b"KICK": kick_handler,
             b"LIST": list_handler,
             b"LUSERS": lusers_handler,
             b"MODE": mode_handler,
@@ -672,12 +879,14 @@ class Client:
             b"NAMES": names_handler,
             b"NICK": nick_handler,
             b"NOTICE": notice_and_privmsg_handler,
+            b"MSG": msg_handler,
             b"PART": part_handler,
             b"PING": ping_handler,
             b"PONG": pong_handler,
             b"PRIVMSG": notice_and_privmsg_handler,
             b"QUIT": quit_handler,
             b"TOPIC": topic_handler,
+            b"UNBAN": unban_handler,
             b"WALLOPS": wallops_handler,
             b"WHO": who_handler,
             b"WHOIS": whois_handler,
@@ -826,6 +1035,9 @@ class Server:
         self.cloak = args.cloak
         self.max_clients = args.max_clients
         self.max_channels = args.max_channels
+        self.passwords_filename = 'passwords'
+        self.passwords_filename_lock = False
+        self.banned_nicknames = []
         self.total_members = 0
         self.name: bytes
 
