@@ -445,6 +445,8 @@ class Client:
         salt = self.__get_salt(identify_nick)
         if not salt:
             self.reply(b"406 %s :Not registered" % (self.nickname))
+            self.is_operator = False
+            self.is_registered = False
             return
         hashed_password = self.__hash_password(salt, password)
         retval = self.__identify(identify_nick, salt, hashed_password)
@@ -453,6 +455,8 @@ class Client:
         if retval > 1:
             self.is_operator = True
         elif retval == 0:
+            self.is_operator = False
+            self.is_registered = False
             self.reply(b"401 %s :No such nick" % (self.nickname))
 
     def __command_handler(
@@ -609,22 +613,18 @@ class Client:
                 )
 
         def kick_handler() -> None:
-            print('kick 1')
             if not self.is_operator:
                 self.reply(
                     b"481 %s :Permission denied"
                     % (self.nickname)
                 )
                 return
-            print('kick 2')
             if len(arguments) < 1:
                 self.reply(b"431 :No nickname given")
                 return
             kicknick = arguments[0]
-            print('kick 3 ' + kicknick.decode('utf-8'))
             if kicknick == self.nickname:
                 pass
-            print('kick 4')
             client = server.get_client(kicknick)
             if not client:
                 self.reply(
@@ -633,21 +633,17 @@ class Client:
                 )
                 return                
             if client is self:
-                print('kick 5')
                 self.reply(
                     b"433 %s %s :Nickname is already in use"
                     % (self.nickname, kicknick)
                 )
                 return
-            print('kick 6')
             if client.oper:
-                print('kick 7')
                 self.reply(
                     b"481 %s %s :Permission denied"
                     % (self.nickname, kicknick)
                 )
                 return
-            print('kick 8')
             reason = b'kicked'
             if len(arguments) > 1:
                 reason = b''
@@ -655,10 +651,8 @@ class Client:
                     if index > 1:
                         reason += b' '
                     reason += arguments[1]
-            print('kick 9 ' + reason.decode('utf-8'))
             self.server.remove_client(client, reason)
             if kicknick not in self.server.banned_nicknames:
-                print('kick 10')
                 self.server.banned_nicknames.append(kicknick)
 
         def unban_handler() -> None:
@@ -695,6 +689,8 @@ class Client:
         def identify_handler() -> None:
             if len(arguments) < 1:
                 self.reply(b"731 :No command")
+                self.is_operator = False
+                self.is_registered = False
                 return
             password = arguments[0].decode('utf-8').lower()
             self.__msg_nickserv_identify(password)
