@@ -646,7 +646,6 @@ class Client:
                     if index > 1:
                         reason += b' '
                     reason += arguments[1]
-            self.reply(b"372 %s :- %s" % (kicknick, reason))
             self.server.remove_client(client, reason)
             if kicknick not in self.server.banned_nicknames:
                 self.server.banned_nicknames.append(kicknick)
