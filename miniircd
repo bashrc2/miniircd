@@ -685,7 +685,6 @@ class Client:
                 self.message((f"Register failed").encode())
 
         def setpassword_handler() -> None:
-            print('setpassword: ' + str(arguments))
             if len(arguments) < 1:
                 self.reply_461(b"SETPASSWORD")
                 return
