@@ -626,7 +626,13 @@ class Client:
                 pass
             print('kick 4')
             client = server.get_client(kicknick)
-            if client and client is self:
+            if not client:
+                self.reply(
+                    b"401 %s %s :Nickname not found"
+                    % (self.nickname, kicknick)
+                )
+                return                
+            if client is self:
                 print('kick 5')
                 self.reply(
                     b"433 %s %s :Nickname is already in use"
@@ -634,7 +640,7 @@ class Client:
                 )
                 return
             print('kick 6')
-            if client.oper:
+            if client.oper
                 print('kick 7')
                 self.reply(
                     b"481 %s %s :Permission denied"
