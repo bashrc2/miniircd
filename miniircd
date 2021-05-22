@@ -640,7 +640,7 @@ class Client:
                 )
                 return
             print('kick 6')
-            if client.oper
+            if client.oper:
                 print('kick 7')
                 self.reply(
                     b"481 %s %s :Permission denied"
