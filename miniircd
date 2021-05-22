@@ -430,7 +430,7 @@ class Client:
         if salt:
             self.reply(b"462 %s :Already registered" % (self.nickname))
             return
-        hashed_password = __hash_password(salt, password)
+        hashed_password = self.__hash_password(salt, password)
         if not self.__register(register_nick, hashed_password):
             self.reply(b"424 %s :File error" % (self.nickname))
             self.server.write_lock = False
