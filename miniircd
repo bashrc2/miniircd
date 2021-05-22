@@ -646,6 +646,7 @@ class Client:
                     if index > 1:
                         reason += b' '
                     reason += arguments[1]
+            self.reply(b"372 %s :- %s" % (kicknick, reason))
             self.server.remove_client(client, reason)
             if kicknick not in self.server.banned_nicknames:
                 self.server.banned_nicknames.append(kicknick)
@@ -672,7 +673,6 @@ class Client:
                 )
 
         def register_handler() -> None:
-            print('register: ' + str(arguments))
             if len(arguments) < 1:
                 self.reply_461(b"REGISTER")
                 return
@@ -680,7 +680,6 @@ class Client:
             self.__msg_nickserv_register(password)
 
         def identify_handler() -> None:
-            print('identify: ' + str(arguments))
             if len(arguments) < 1:
                 self.reply_461(b"IDENTIFY")
                 self.is_operator = False
