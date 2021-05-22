@@ -62,7 +62,7 @@ class Channel:
                 .replace("_", "__")
                 .replace("/", "_")
             )
-            self._state_path = f"{self.server.state_dir}/{fs_safe_name}"            
+            self._state_path = f"{self.server.state_dir}/{fs_safe_name}"
             self._read_state()
         else:
             self._state_path = None
@@ -433,7 +433,7 @@ class Client:
         if salt:
             self.reply(b"462 %s :Already registered" % (self.nickname))
             return False
-        salt = hashlib.sha256(os.urandom(60)).hexdigest()        
+        salt = hashlib.sha256(os.urandom(60)).hexdigest()
         hashed_password = self.__hash_password(salt, password)
         if not self.__register(register_nick, salt, hashed_password):
             self.reply(b"424 %s :File error" % (self.nickname))
@@ -629,7 +629,7 @@ class Client:
             if not client:
                 self.reply(b"401 %s %s :Nickname not found"
                            % (self.nickname, kicknick))
-                return                
+                return
             if client is self:
                 self.reply(
                     b"433 %s %s :Nickname is already in use"
@@ -683,6 +683,51 @@ class Client:
                 self.message((f"Register success").encode())
             else:
                 self.message((f"Register failed").encode())
+
+        def setpassword_handler() -> None:
+            print('setpassword: ' + str(arguments))
+            if len(arguments) < 1:
+                self.reply_461(b"SETPASSWORD")
+                return
+            if not self.is_operator:
+                if not self.is_registered:
+                    self.reply(b"406 %s :Not registered" % self.nickname)
+                    self.message((f"Not registered").encode())
+                    return
+            password = arguments[0].decode('utf-8')
+            nickStr = self.nickname.decode('utf-8')
+            salt = self.__get_salt(nickStr)
+            if not salt:
+                self.reply(b"406 %s :Not registered" % self.nickname)
+                self.message((f"Not registered").encode())
+                return False
+            salt = hashlib.sha256(os.urandom(60)).hexdigest()
+            hashed_password = self.__hash_password(salt, password)
+            new_password_file = None
+            try:
+                with open(self.server.passwords_filename, 'r') as fp:
+                    lines = fp.readlines()
+                    new_password_file = ''
+                    for line in lines:
+                        if not line.endswith('\n'):
+                            line += '\n'
+                        new_line = line
+                        if line.startswith(nickStr + ' ' + salt + ' '):
+                            new_line = nickStr + ' ' + salt + ' ' + hashed_password
+                            if self.is_operator:
+                                new_line += ' oper'
+                            new_line += '\n'
+                        new_password_file += new_line
+            except BaseException:
+                pass
+            if new_password_file:
+                try:
+                    with open(self.server.passwords_filename, 'w+') as fp:
+                        fp.write(new_password_file)
+                except BaseException:
+                    self.message((f"Failed to change password").encode())
+                    return
+            self.message((f"Changed password").encode())
 
         def identify_handler() -> None:
             if len(arguments) < 1:
@@ -895,6 +940,7 @@ class Client:
             b"PRIVMSG": notice_and_privmsg_handler,
             b"QUIT": quit_handler,
             b"REGISTER": register_handler,
+            b"SETPASSWORD": setpassword_handler,
             b"TOPIC": topic_handler,
             b"UNBAN": unban_handler,
             b"WALLOPS": wallops_handler,
