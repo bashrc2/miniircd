@@ -119,12 +119,15 @@ class Channel:
     def _write_state(self) -> None:
         if not self._state_path:
             return
-        fd, path = tempfile.mkstemp(dir=os.path.dirname(self._state_path))
-        fp = os.fdopen(fd, "w")
-        fp.write("topic = %r\n" % self.topic)
-        fp.write("key = %r\n" % self.key)
-        fp.close()
-        os.rename(path, self._state_path)
+        if not self.server.write_lock:
+            self.server.write_lock = True
+            try:
+                with open(self._state_path, "w+") as state_file:
+                    state_file.write("topic = %r\n" % self.topic)
+                    state_file.write("key = %r\n" % self.key)
+            except BaseException:
+                pass
+        self.server.write_lock = False
 
 
 class Client:
@@ -564,29 +567,21 @@ class Client:
         def _register(nickname: str, password: str, oper=False) -> bool:
             if nickname.endswith('_'):
                 return False
-            if self.server.passwords_filename_lock:
+            if self.server.write_lock:
                 return False
             if not os.path.isfile(self.server.passwords_filename):
                 oper = True
-            self.server.passwords_filename_lock = True
+            self.server.write_lock = True
             salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
             line = nickname + ' ' + salt + ' ' + hashed_password
             if oper:
-                line += ' oper'
-
-            fd, path = tempfile.mkstemp(dir=os.path.dirname(self._state_path))
-            fp = os.fdopen(fd, "a+")
-            fp.write("topic = %r\n" % self.topic)
-            fp.write("key = %r\n" % self.key)
-            fp.close()
-            os.rename(path, self._state_path)
-                
+                line += ' oper'                
             try:
                 with open(self.server.passwords_filename, 'a+') as fp:
                     fp.write(line + '\n')
             except BaseException:
                 return False
-            self.server.passwords_filename_lock = False
+            self.server.write_lock = False
             return True
 
         def _password_entry(nickname: str) -> str:
@@ -666,7 +661,7 @@ class Client:
                         b"424 %s %s :File error"
                         % (self.nickname, cmdTypeStr)
                     )
-                    self.server.passwords_filename_lock = False
+                    self.server.write_lock = False
                     return
             elif cmdTypeStr.decode('utf-8').lower() == 'identify':
                 if len(arguments) < 3:
@@ -1047,8 +1042,8 @@ class Server:
         self.cloak = args.cloak
         self.max_clients = args.max_clients
         self.max_channels = args.max_channels
-        self.passwords_filename = 'passwords'
-        self.passwords_filename_lock = False
+        self.passwords_filename = os.path.join(args.state_dir, 'passwords')
+        self.write_lock = False
         self.banned_nicknames = []
         self.total_members = 0
         self.name: bytes
