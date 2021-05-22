@@ -171,6 +171,10 @@ class Client:
     def prefix(self) -> bytes:
         return b"%s!%s@%s" % (self.nickname, self.user, self.host)
 
+    @property
+    def oper(self) -> bool:
+        return self.is_operator
+
     def check_aliveness(self) -> None:
         now = time.time()
         if self.__timestamp + 180 < now:
@@ -630,7 +634,7 @@ class Client:
                 )
                 return
             print('kick 6')
-            if client.is_operator:
+            if client.oper:
                 print('kick 7')
                 self.reply(
                     b"481 %s %s :Permission denied"
