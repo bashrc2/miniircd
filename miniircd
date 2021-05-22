@@ -444,7 +444,7 @@ class Client:
         identify_nick = self.nickname.decode('utf-8')
         salt = self.__get_salt(identify_nick)
         if not salt:
-            self.reply(b"406 %s :Not registered" % (self.nickname))
+            self.reply(b"406 %s :Not registered" % self.nickname)
             self.is_operator = False
             self.is_registered = False
             return
@@ -457,7 +457,7 @@ class Client:
         if retval == 0:
             self.is_operator = False
             self.is_registered = False
-            self.reply(b"401 %s :No such nick" % (self.nickname))
+            self.reply(b"401 %s :No such nick" % self.nickname)
 
     def __command_handler(
         self, command: bytes, arguments: Sequence[bytes]
