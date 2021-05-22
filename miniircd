@@ -700,7 +700,6 @@ class Client:
                 self.reply(b"406 %s :Not registered" % self.nickname)
                 self.message((f"Not registered").encode())
                 return False
-            salt = hashlib.sha256(os.urandom(60)).hexdigest()
             hashed_password = self.__hash_password(salt, password)
             new_password_file = None
             try:
