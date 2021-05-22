@@ -305,7 +305,7 @@ class Client:
                 continue
 
             if for_join:
-                if self.nickname not in self.server.banned_nicknames:
+                if self.nickname not in server.banned_nicknames:
                     if channel.add_member(self):
                         self.channels[irc_lower(channelname)] = channel
                         self.message_channel(channel, b"JOIN", channelname, True)
@@ -470,7 +470,7 @@ class Client:
                 self.reply_461(b"ISON")
                 return
             nicks = arguments
-            online = [n for n in nicks if server.get_client(n)]
+            online = [n for n in nicks if self.server.get_client(n)]
             self.reply(b"303 %s :%s" % (self.nickname, b" ".join(online)))
 
         def join_handler() -> None:
@@ -481,19 +481,19 @@ class Client:
                 for (channelname, channel) in self.channels.items():
                     self.message_channel(channel, b"PART", channelname, True)
                     self.channel_log(channel, b"left", meta=True)
-                    server.remove_member_from_channel(self, channelname)
+                    self.server.remove_member_from_channel(self, channelname)
                 self.channels = {}
                 return
             self.__send_names(arguments, for_join=True)
 
         def list_handler() -> None:
             if len(arguments) < 1:
-                channels = list(server.channels.values())
+                channels = list(self.server.channels.values())
             else:
                 channels = []
                 for channelname in arguments[0].split(b","):
-                    if server.has_channel(channelname):
-                        channels.append(server.get_channel(channelname))
+                    if self.server.has_channel(channelname):
+                        channels.append(self.server.get_channel(channelname))
 
             sorted_channels = sorted(channels, key=lambda x: x.name)
             for channel in sorted_channels:
@@ -516,8 +516,8 @@ class Client:
                 self.reply_461(b"MODE")
                 return
             targetname = arguments[0]
-            if server.has_channel(targetname):
-                channel = server.get_channel(targetname)
+            if self.server.has_channel(targetname):
+                channel = self.server.get_channel(targetname)
                 if len(arguments) < 2:
                     if channel.key:
                         modes = b"+k"
@@ -586,7 +586,7 @@ class Client:
                 self.reply(b"431 :No nickname given")
                 return
             newnick = arguments[0]
-            client = server.get_client(newnick)
+            client = self.server.get_client(newnick)
             if newnick == self.nickname:
                 pass
             elif client and client is not self:
@@ -605,7 +605,7 @@ class Client:
                     )
                 oldnickname = self.nickname
                 self.nickname = newnick
-                server.client_changed_nickname(self, oldnickname)
+                self.server.client_changed_nickname(self, oldnickname)
                 self.message_related(
                     b":%s!%s@%s NICK %s"
                     % (oldnickname, self.user, self.host, self.nickname),
@@ -622,12 +622,11 @@ class Client:
             kicknick = arguments[0]
             if kicknick == self.nickname:
                 pass
-            client = server.get_client(kicknick)
+            print('kicknick: ' + kicknick.decode('utf-8'))
+            client = self.server.get_client(kicknick)
             if not client:
-                self.reply(
-                    b"401 %s %s :Nickname not found"
-                    % (self.nickname, kicknick)
-                )
+                self.reply(b"401 %s %s :Nickname not found"
+                           % (self.nickname, kicknick))
                 return                
             if client is self:
                 self.reply(
@@ -701,14 +700,14 @@ class Client:
                 return
             targetname = arguments[0]
             message = arguments[1]
-            client = server.get_client(targetname)
+            client = self.server.get_client(targetname)
             if client:
                 client.message(
                     b":%s %s %s :%s"
                     % (self.prefix, command, targetname, message)
                 )
-            elif server.has_channel(targetname):
-                channel = server.get_channel(targetname)
+            elif self.server.has_channel(targetname):
+                channel = self.server.get_channel(targetname)
                 self.message_channel(
                     channel, command, b"%s :%s" % (channel.name, message)
                 )
@@ -747,13 +746,13 @@ class Client:
                         channel, b"left (%s)" % partmsg, meta=True
                     )
                     del self.channels[irc_lower(channelname)]
-                    server.remove_member_from_channel(self, channelname)
+                    self.server.remove_member_from_channel(self, channelname)
 
         def ping_handler() -> None:
             if len(arguments) < 1:
                 self.reply(b"409 %s :No origin specified" % self.nickname)
                 return
-            self.reply(b"PONG %s :%s" % (server.name, arguments[0]))
+            self.reply(b"PONG %s :%s" % (self.server.name, arguments[0]))
 
         def pong_handler() -> None:
             pass
@@ -803,7 +802,7 @@ class Client:
                 self.reply_461(b"WALLOPS")
                 return
             message = arguments[0]
-            for client in server.clients.values():
+            for client in self.server.clients.values():
                 client.message(
                     b":%s NOTICE %s :Global notice: %s"
                     % (self.prefix, client.nickname, message)
@@ -813,8 +812,8 @@ class Client:
             if len(arguments) < 1:
                 return
             targetname = arguments[0]
-            if server.has_channel(targetname):
-                channel = server.get_channel(targetname)
+            if self.server.has_channel(targetname):
+                channel = self.server.get_channel(targetname)
                 for member in channel.members:
                     self.reply(
                         b"352 %s %s %s %s %s %s H :0 %s"
@@ -823,7 +822,7 @@ class Client:
                             targetname,
                             member.user,
                             member.host,
-                            server.name,
+                            self.server.name,
                             member.nickname,
                             member.realname,
                         )
@@ -836,7 +835,7 @@ class Client:
             if len(arguments) < 1:
                 return
             username = arguments[0]
-            user = server.get_client(username)
+            user = self.server.get_client(username)
             if user:
                 self.reply(
                     b"311 %s %s %s %s * :%s"
@@ -850,7 +849,7 @@ class Client:
                 )
                 self.reply(
                     b"312 %s %s %s :%s"
-                    % (self.nickname, user.nickname, server.name, server.name)
+                    % (self.nickname, user.nickname, self.server.name, self.server.name)
                 )
                 self.reply(
                     b"319 %s %s :%s"
