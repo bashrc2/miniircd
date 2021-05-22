@@ -44,7 +44,7 @@ Installation
 
 No special installation needed: Just clone the repository and execute miniircd:
 
-    git clone https://github.com/jrosdahl/miniircd.git
+    git clone https://gitlan.com/bashrc2/miniircd.git
     cd miniircd
     ./miniircd --help
 
@@ -52,7 +52,7 @@ If you do want to install miniircd, there are several options:
 
 1. Clone the repository and copy the executable file to a directory in PATH:
 
-        git clone https://github.com/jrosdahl/miniircd.git
+        git clone https://gitlab.com/bashrc2/miniircd.git
         cd miniircd
         cp miniircd /usr/local/bin  # or some other directory in your PATH
 
@@ -130,7 +130,7 @@ To identify yourself connect with your previous nick, then:
 
     /identify [password]
 	
-The first account to be registered gets oper status.
+The first account to be registered gets oper status. Note that this applies for all channels.
 
 A passwords file in the state directory contains password hashes. The word "oper" is appended to any accounts with oper status.
 
