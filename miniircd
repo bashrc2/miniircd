@@ -62,7 +62,7 @@ class Channel:
                 .replace("_", "__")
                 .replace("/", "_")
             )
-            self._state_path = f"{self.server.state_dir}/{fs_safe_name}"
+            self._state_path = f"{self.server.state_dir}/{fs_safe_name}"            
             self._read_state()
         else:
             self._state_path = None
@@ -102,6 +102,8 @@ class Channel:
             self.server.remove_channel(self)
 
     def _read_state(self) -> None:
+        if not os.path.exists(self._state_path):
+            os.mkdir(self._state_path)
         if not (self._state_path and os.path.exists(self._state_path)):
             return
         data: Dict[str, Any] = {}
@@ -569,6 +571,14 @@ class Client:
             line = nickname + ' ' + salt + ' ' + hashed_password
             if oper:
                 line += ' oper'
+
+            fd, path = tempfile.mkstemp(dir=os.path.dirname(self._state_path))
+            fp = os.fdopen(fd, "a+")
+            fp.write("topic = %r\n" % self.topic)
+            fp.write("key = %r\n" % self.key)
+            fp.close()
+            os.rename(path, self._state_path)
+                
             try:
                 with open(self.server.passwords_filename, 'a+') as fp:
                     fp.write(line + '\n')
