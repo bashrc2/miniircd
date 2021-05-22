@@ -102,10 +102,12 @@ class Channel:
             self.server.remove_channel(self)
 
     def _read_state(self) -> None:
+        if not self._state_path:
+            return
         if not os.path.exists(self._state_path):
             os.mkdir(self._state_path)
-        if not (self._state_path and os.path.exists(self._state_path)):
-            return
+            if not os.path.exists(self._state_path):
+                return
         data: Dict[str, Any] = {}
 
         with open(self._state_path, "rb") as state_file:
