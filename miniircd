@@ -442,7 +442,7 @@ class Client:
         if not salt:
             self.reply(b"406 %s :Not registered" % (self.nickname))
             return
-        hashed_password = __hash_password(salt, password)
+        hashed_password = self.__hash_password(salt, password)
         retval = self.__identify(identify_nick, salt, hashed_password)
         if retval > 0:
             self.is_registered = True
