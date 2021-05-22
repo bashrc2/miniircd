@@ -622,7 +622,7 @@ class Client:
             kicknick = arguments[0]
             if kicknick == self.nickname:
                 pass
-            print('kicknick: ' + kicknick.decode('utf-8'))
+            print('kick: ' + str(arguments))
             client = self.server.get_client(kicknick)
             if not client:
                 self.reply(b"401 %s %s :Nickname not found"
