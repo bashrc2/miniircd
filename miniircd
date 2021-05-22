@@ -502,31 +502,39 @@ class Client:
                 )
 
         def kick_handler() -> None:
+            print('kick 1')
             if not self.is_operator:
                 self.reply(
                     b"481 %s :Permission denied"
                     % (self.nickname)
                 )
                 return
+            print('kick 2')
             if len(arguments) < 1:
                 self.reply(b"431 :No nickname given")
                 return
             kicknick = arguments[0]
+            print('kick 3 ' + kicknick.decode('utf-8'))
             if kicknick == self.nickname:
                 pass
+            print('kick 4')
             client = server.get_client(kicknick)
             if client and client is self:
+                print('kick 5')
                 self.reply(
                     b"433 %s %s :Nickname is already in use"
                     % (self.nickname, kicknick)
                 )
                 return
+            print('kick 6')
             if client.is_operator:
+                print('kick 7')
                 self.reply(
                     b"481 %s %s :Permission denied"
                     % (self.nickname, kicknick)
                 )
                 return
+            print('kick 8')
             reason = b'kicked'
             if len(arguments) > 1:
                 reason = b''
@@ -534,24 +542,31 @@ class Client:
                     if index > 1:
                         reason += b' '
                     reason += arguments[1]
+            print('kick 9 ' + reason.decode('utf-8'))
             self.server.remove_client(client, reason)
             if kicknick not in self.server.banned_nicknames:
+                print('kick 10')
                 self.server.banned_nicknames.append(kicknick)
 
         def unban_handler() -> None:
+            print('unban 1')
             if not self.is_operator:
                 self.reply(
                     b"481 %s :Permission denied"
                     % (self.nickname)
                 )
                 return
+            print('unban 2')
             if len(arguments) < 1:
                 self.reply(b"431 :No nickname given")
                 return
             kicknick = arguments[0]
+            print('unban 3 ' + kicknick.decode('utf-8'))
             if kicknick in self.server.banned_nicknames:
+                print('unban 4')
                 self.server.banned_nicknames.remove(kicknick)
             else:
+                print('unban 5')
                 self.reply(
                     b"481 %s %s :Not on banned list"
                     % (self.nickname, kicknick)
