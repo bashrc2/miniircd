@@ -616,13 +616,12 @@ class Client:
             if not self.is_operator:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 return
-            if len(arguments) < 1:
+            if len(arguments) < 2:
                 self.reply_461(b"KICK")
                 return
-            kicknick = arguments[0]
+            kicknick = arguments[1]
             if kicknick == self.nickname:
                 pass
-            print('kick: ' + str(arguments))
             client = self.server.get_client(kicknick)
             if not client:
                 self.reply(b"401 %s %s :Nickname not found"
@@ -657,10 +656,10 @@ class Client:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 return
             print('unban 2')
-            if len(arguments) < 1:
+            if len(arguments) < 2:
                 self.reply_461(b"UNBAN")
                 return
-            kicknick = arguments[0]
+            kicknick = arguments[1]
             print('unban 3 ' + kicknick.decode('utf-8'))
             if kicknick in self.server.banned_nicknames:
                 print('unban 4')
@@ -673,6 +672,7 @@ class Client:
                 )
 
         def register_handler() -> None:
+            print('register: ' + str(arguments))
             if len(arguments) < 1:
                 self.reply_461(b"REGISTER")
                 return
@@ -680,6 +680,7 @@ class Client:
             self.__msg_nickserv_register(password)
 
         def identify_handler() -> None:
+            print('identify: ' + str(arguments))
             if len(arguments) < 1:
                 self.reply_461(b"IDENTIFY")
                 self.is_operator = False
