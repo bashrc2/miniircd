@@ -351,7 +351,7 @@ class Client:
     def __hash_password(self, salt: str, password: str) -> str:
         pwdhash = hashlib.pbkdf2_hmac('sha512',
                                       password.encode('utf-8'),
-                                      salt, 100000)
+                                      salt.encode('utf-8'), 100000)
         pwdhash = binascii.hexlify(pwdhash)
         return pwdhash.decode('ascii')
 
