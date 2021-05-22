@@ -134,6 +134,10 @@ The first account to be registered gets oper status. Note that this applies for 
 
 A passwords file in the state directory contains password hashes. The word "oper" is appended to any accounts with oper status.
 
+To subsequently change password:
+
+    /setpassword [newpassword]
+
 
 Basic moderation
 ----------------
