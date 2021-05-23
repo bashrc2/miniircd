@@ -667,31 +667,42 @@ class Client:
             kicknick = arguments[1]
             if kicknick == self.nickname:
                 pass
-            client = self.server.get_client(kicknick)
-            if not client:
-                self.reply(b"401 %s %s :Nickname not found"
-                           % (self.nickname, kicknick))
-                return
-            if client is self:
-                self.reply(
-                    b"433 %s %s :Nickname is already in use"
-                    % (self.nickname, kicknick)
-                )
-                return
-            if client.oper:
-                self.reply(
-                    b"481 %s %s :Permission denied"
-                    % (self.nickname, kicknick)
-                )
-                return
-            reason = b'kicked'
-            if len(arguments) > 1:
-                reason = b''
-                for index in range(1, len(arguments)):
-                    if index > 1:
-                        reason += b' '
-                    reason += arguments[1]
-            self.server.remove_client(client, reason)
+            kicknick = kicknick.decode('utf-8')
+            if '*' not in kicknick:
+                kickList = [kicknick.encode()]
+            else:
+                kickList = []
+                for client in self.server.clients.values():
+                    search_pattern = kicknick.replace('*', '.+')
+                    nick = client.nickname.decode('utf-8')
+                    if re.search(search_pattern, nick):
+                        kickList.append(client.nickname)
+            for kicknick in kickList:
+                client = self.server.get_client(kicknick)
+                if not client:
+                    self.reply(b"401 %s %s :Nickname not found"
+                               % (self.nickname, kicknick))
+                    return
+                if client is self:
+                    self.reply(
+                        b"433 %s %s :Nickname is already in use"
+                        % (self.nickname, kicknick)
+                    )
+                    return
+                if client.oper:
+                    self.reply(
+                        b"481 %s %s :Permission denied"
+                        % (self.nickname, kicknick)
+                    )
+                    return
+                reason = b'kicked'
+                if len(arguments) > 1:
+                    reason = b''
+                    for index in range(1, len(arguments)):
+                        if index > 1:
+                            reason += b' '
+                        reason += arguments[1]
+                self.server.remove_client(client, reason)
 
         def register_handler() -> None:
             if len(arguments) < 1:
