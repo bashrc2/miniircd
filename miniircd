@@ -329,6 +329,7 @@ class Client:
                                 b"331 %s %s :No topic is set"
                                 % (self.nickname, channel.name)
                             )
+                        server.bouncer_replay(self.nickname)
                     else:
                         self.reply(
                             b"404 %s %s :Maximum clients on server"
@@ -1151,8 +1152,9 @@ class Client:
         include_self: bool = False,
     ) -> None:
         if self.__quiet or self.server.message_filtered(message):
-            return
+            return        
         line = b":%s %s %s" % (self.prefix, command, message)
+        self.server.update_bouncer(line)
         for client in channel.members:
             if client != self or include_self:
                 client.message(line)
@@ -1235,6 +1237,8 @@ class Server:
         self.write_lock = False
         self.banned_nicknames = []
         self.filters = []
+        self.bouncer = []
+        self.bouncer_size = 128
         self.total_members = 0
         self.name: bytes
 
@@ -1299,6 +1303,18 @@ class Server:
                             self.filters.append(filterStr)
             except BaseException:
                 pass
+
+    def update_bouncer(self, line: bytes) -> None:
+        self.bouncer.insert(0, line)
+        while len(self.bouncer) >= self.bouncer_size:
+            self.bouncer.pop()
+
+    def bouncer_replay(self, nickname: bytes) -> None:
+        client = self.get_client(nickname)
+        if not client:
+            return
+        for line in self.bouncer:
+            client.message(line)
 
     def message_filtered(self, message: bytes) -> bool:
         messageStr = message.decode('utf-8')
