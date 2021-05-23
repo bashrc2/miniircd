@@ -599,13 +599,11 @@ class Client:
                                 b"%s -b %s" % (channel.name, banned_nick),
                                 True,
                             )
-                            print('unban 4')
                             self.server.banned_nicknames.remove(banned_nick)
                             self.channel_log(
                                 channel, b"Removed ban on %s" % banned_nick, meta=True
                             )
                         else:
-                            print('unban 5')
                             self.reply(
                                 b"481 %s %s :Not on banned list"
                                 % (self.nickname, banned_nick)
