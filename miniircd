@@ -585,7 +585,9 @@ class Client:
                                 True,
                             )
                             self.server.banned_nicknames.append(banned_nick)
-                            self.server.remove_client(client, b'banned')
+                            client = self.server.get_client(banned_nick)
+                            if client:
+                                self.server.remove_client(client, b'banned')
                             self.channel_log(
                                 channel, b"Banned %s" % banned_nick, meta=True
                             )
