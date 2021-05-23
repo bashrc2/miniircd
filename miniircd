@@ -515,9 +515,14 @@ class Client:
             self.send_lusers()
 
         def mode_handler() -> None:
+            print('mode_handler 1')
             if len(arguments) < 1:
                 self.reply_461(b"MODE")
                 return
+            if not self.is_operator:
+                self.reply(b"481 %s :Mode change permission denied" % (self.nickname))
+                return
+            print('mode_handler 2 ' + str(arguments))
             targetname = arguments[0]
             if self.server.has_channel(targetname):
                 channel = self.server.get_channel(targetname)
@@ -566,6 +571,42 @@ class Client:
                         self.reply(
                             b"442 %s :You're not on that channel" % targetname
                         )
+                elif flag == b"+b":
+                    if irc_lower(channel.name) in self.channels:
+                        banned_nick = arguments[2]
+                        if banned_nick not in self.server.banned_nicknames:
+                            self.message_channel(
+                                channel,
+                                b"MODE",
+                                b"%s +b %s" % (channel.name, banned_nick),
+                                True,
+                            )
+                            self.server.banned_nicknames.append(banned_nick)
+                            self.server.remove_client(client, b'banned')
+                            self.channel_log(
+                                channel, b"Banned %s" % banned_nick, meta=True
+                            )
+                elif flag == b"-b":
+                    if irc_lower(channel.name) in self.channels:
+                        banned_nick = arguments[2]
+                        if banned_nick in self.server.banned_nicknames:
+                            self.message_channel(
+                                channel,
+                                b"MODE",
+                                b"%s -b %s" % (channel.name, banned_nick),
+                                True,
+                            )
+                            print('unban 4')
+                            self.server.banned_nicknames.remove(banned_nick)
+                            self.channel_log(
+                                channel, b"Removed ban on %s" % banned_nick, meta=True
+                            )
+                        else:
+                            print('unban 5')
+                            self.reply(
+                                b"481 %s %s :Not on banned list"
+                                % (self.nickname, banned_nick)
+                            )
                 else:
                     self.reply(
                         b"472 %s %s :Unknown MODE flag" % (self.nickname, flag)
@@ -650,29 +691,6 @@ class Client:
                         reason += b' '
                     reason += arguments[1]
             self.server.remove_client(client, reason)
-            if kicknick not in self.server.banned_nicknames:
-                self.server.banned_nicknames.append(kicknick)
-
-        def unban_handler() -> None:
-            print('unban 1')
-            if not self.is_operator:
-                self.reply(b"481 %s :Permission denied" % (self.nickname))
-                return
-            print('unban 2')
-            if len(arguments) < 2:
-                self.reply_461(b"UNBAN")
-                return
-            kicknick = arguments[1]
-            print('unban 3 ' + kicknick.decode('utf-8'))
-            if kicknick in self.server.banned_nicknames:
-                print('unban 4')
-                self.server.banned_nicknames.remove(kicknick)
-            else:
-                print('unban 5')
-                self.reply(
-                    b"481 %s %s :Not on banned list"
-                    % (self.nickname, kicknick)
-                )
 
         def register_handler() -> None:
             if len(arguments) < 1:
@@ -954,7 +972,6 @@ class Client:
             b"REGISTER": register_handler,
             b"SETPASSWORD": setpassword_handler,
             b"TOPIC": topic_handler,
-            b"UNBAN": unban_handler,
             b"WALLOPS": wallops_handler,
             b"WHO": who_handler,
             b"WHOIS": whois_handler,
