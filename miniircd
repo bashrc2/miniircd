@@ -305,7 +305,7 @@ class Client:
                 continue
 
             if for_join:
-                if self.nickname not in server.banned_nicknames:
+                if not server.nickname_is_banned(self.nickname):
                     if channel.add_member(self):
                         self.channels[irc_lower(channelname)] = channel
                         self.message_channel(channel, b"JOIN", channelname, True)
@@ -1183,13 +1183,37 @@ class Server:
             except BaseException:
                 pass
 
+    def nickname_is_banned(self, nickname: bytes) -> bool:
+        if nickname in self.banned_nicknames:
+            return True
+        nicknameStr = nickname.decode('utf-8')
+        for nick in self.banned_nicknames:
+            if b'*' in nick or b'?' in nick:
+                search_pattern = nick.decode('utf-8')
+                if re.search(search_pattern, nicknameStr):
+                    return True
+        return False
+
     def ban(self, nickname: bytes) -> None:
         if nickname in self.banned_nicknames:
             return
         self.banned_nicknames.append(nickname)
-        client = self.get_client(nickname)
-        if client:
-            self.remove_client(client, b'banned')
+
+        nickStr = nickname.decode('utf-8')
+        if '*' not in nickStr and '?' not in nickStr:
+            banList = [nickname]
+        else:
+            banList = []
+            for client in self.clients.values():
+                search_pattern = \
+                    nickStr.replace('*', '.+').replace('?', '.')
+                nick = client.nickname.decode('utf-8')
+                if re.search(search_pattern, nick):
+                    banList.append(client.nickname)
+        for nickname in banList:
+            client = self.get_client(nickname)
+            if client:
+                self.remove_client(client, b'banned')
         bannedListStr = ''
         for nick in self.banned_nicknames:
             bannedListStr += nick.decode('utf-8') + '\n'
