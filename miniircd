@@ -179,23 +179,26 @@ class Client:
     @oper.setter
     def oper(self, value: bool) -> None:
         lines = []
-        try:
-            with open(self.server.passwords_filename, 'r') as fp:
-                fileStr = fp.read()
-                lines = fileStr.split('\n')                
-        except BaseException:
-            return
+        #try:
+        with open(self.server.passwords_filename, 'r') as fp:
+            fileStr = fp.read()
+            lines = fileStr.split('\n')                
+        #except BaseException:
+        #    return
 
         if not lines:
             return
 
         changed = False
+        nickStr = self.nickname.decode('utf-8')
         for line in lines:
-            if line.startswith(self.nickname.decode('utf-8') + ' '):
-                if value and not line.endswith('oper'):
-                    line = line.strip() + ' oper'
+            if not line:
+                continue
+            if line.startswith(nickStr + ' '):
+                if value and not line.endswith(' oper'):
+                    line = line + ' oper'
                     changed = True
-                elif not value and line.endswith('oper'):
+                elif not value and line.endswith(' oper'):
                     line = line.replace(' oper', '')
                     changed = True
                 break
@@ -205,11 +208,11 @@ class Client:
                 if not line:
                     continue
                 fileStr += line + '\n'
-            try:
-                with open(self.server.passwords_filename, 'w+') as fp:
-                    fp.write(fileStr)
-            except BaseException:
-                return
+            #try:
+            with open(self.server.passwords_filename, 'w+') as fp:
+                fp.write(fileStr)
+            #except BaseException:
+            #    return
         self.is_operator = value
 
     @property
