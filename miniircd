@@ -1179,7 +1179,7 @@ class Server:
         self.banned_nicknames.append(nickname)
         client = self.get_client(nickname)
         if client:
-            self.server.remove_client(client, b'banned')
+            self.remove_client(client, b'banned')
         bannedListStr = ''
         for nick in self.banned_nicknames:
             bannedListStr += nick.decode('utf-8') + '\n'
