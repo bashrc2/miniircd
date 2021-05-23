@@ -518,6 +518,8 @@ class Client:
                 return
             self.server.filters.sort()
             for filter_pattern in self.server.filters:
+                if not filter_pattern:
+                    continue
                 self.reply(b"348 %s - %s" % (self.nickname, filter_pattern.encode()))
             self.reply(b"349 %s :End of FILTERS" % self.nickname)
 
@@ -527,6 +529,8 @@ class Client:
                 return
             self.server.banned_nicknames.sort()
             for ban in self.server.banned_nicknames:
+                if not ban:
+                    continue
                 self.reply(b"367 %s - %s -" % (self.nickname, ban))
             self.reply(b"368 %s :End of BANS" % self.nickname)
 
