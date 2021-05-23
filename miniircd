@@ -1329,6 +1329,7 @@ class Server:
             )
 
         self.init_logging()
+        print('miniircd v' + VERSION)
         try:
             self.run(serversockets)
         except Exception:
