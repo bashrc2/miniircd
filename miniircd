@@ -511,6 +511,16 @@ class Client:
                 )
             self.reply(b"323 %s :End of LIST" % self.nickname)
 
+        def filters_handler() -> None:
+            for filter_pattern in self.server.filters:
+                self.reply(b"322 %s %s" % (self.nickname, filter_pattern.encode()))
+            self.reply(b"323 %s :End of FILTERS" % self.nickname)
+
+        def bans_handler() -> None:
+            for ban in self.server.banned_nicknames:
+                self.reply(b"322 %s %s" % (self.nickname, ban))
+            self.reply(b"323 %s :End of BANS" % self.nickname)
+
         def lusers_handler() -> None:
             self.send_lusers()
 
@@ -982,7 +992,9 @@ class Client:
 
         handler_table = {
             b"AWAY": away_handler,
+            b"BANS": bans_handler,
             b"FILTER": filter_handler,
+            b"FILTERS": filters_handler,
             b"IDENTIFY": identify_handler,
             b"ISON": ison_handler,
             b"JOIN": join_handler,
