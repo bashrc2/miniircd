@@ -572,8 +572,11 @@ class Client:
                             b"442 %s :You're not on that channel" % targetname
                         )
                 elif flag == b"+b":
+                    if len(arguments) < 4:
+                        self.reply_461(b"MODE")
+                        return
                     if irc_lower(channel.name) in self.channels:
-                        banned_nick = arguments[2]
+                        banned_nick = arguments[3]
                         if banned_nick not in self.server.banned_nicknames:
                             self.message_channel(
                                 channel,
@@ -587,8 +590,11 @@ class Client:
                                 channel, b"Banned %s" % banned_nick, meta=True
                             )
                 elif flag == b"-b":
+                    if len(arguments) < 4:
+                        self.reply_461(b"MODE")
+                        return
                     if irc_lower(channel.name) in self.channels:
-                        banned_nick = arguments[2]
+                        banned_nick = arguments[3]
                         if banned_nick in self.server.banned_nicknames:
                             self.message_channel(
                                 channel,
