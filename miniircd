@@ -630,7 +630,7 @@ class Client:
             if len(arguments) < 3:
                 self.reply_461(b"MSG")
                 return
-            print('msg: 'str(arguments))
+            print('msg: ' + str(arguments))
             serv = arguments[0].decode('utf-8')
             serv_command = arguments[1].decode('utf-8')
             if serv.lower() == 'nickserv':
