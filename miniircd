@@ -162,6 +162,7 @@ class Client:
         self.__readbuffer = b""
         self.__writebuffer = b""
         self.__sent_ping = False
+        self.__quiet = False
         if self.server.password:
             self.__handle_command = self.__pass_handler
         else:
@@ -174,6 +175,14 @@ class Client:
     @property
     def oper(self) -> bool:
         return self.is_operator
+
+    @property
+    def quiet(self) -> bool:
+        return self.__quiet
+
+    @quiet.setter
+    def quiet(self, value: bool) -> None:
+        self.__quiet = value
 
     def check_aliveness(self) -> None:
         now = time.time()
@@ -603,7 +612,7 @@ class Client:
                                 channel,
                                 b"MODE",
                                 b"%s +b %s" % (channel.name, banned_nick),
-                                True,
+                                True
                             )
                             self.server.ban(banned_nick)
                             self.channel_log(
@@ -633,6 +642,42 @@ class Client:
                                 b"481 %s %s :Not on banned list"
                                 % (self.nickname, banned_nick)
                             )
+                elif flag == b"+q":
+                    if len(arguments) < 4:
+                        self.reply_461(b"MODE")
+                        return
+                    if irc_lower(channel.name) in self.channels:
+                        quiet_nick = arguments[3]
+                        self.message_channel(
+                            channel,
+                            b"MODE",
+                            b"%s +q %s" % (channel.name, quiet_nick),
+                            True
+                        )
+                        client = self.get_client(quiet_nick)
+                        if client:
+                            client.quiet = True
+                        self.channel_log(
+                            channel, b"Quiet %s" % quiet_nick, meta=True
+                        )
+                elif flag == b"-q":
+                    if len(arguments) < 4:
+                        self.reply_461(b"MODE")
+                        return
+                    if irc_lower(channel.name) in self.channels:
+                        quiet_nick = arguments[3]
+                        self.message_channel(
+                            channel,
+                            b"MODE",
+                            b"%s -q %s" % (channel.name, quiet_nick),
+                            True
+                        )
+                        client = self.get_client(quiet_nick)
+                        if client:
+                            client.quiet = False
+                        self.channel_log(
+                            channel, b"Removed quiet on %s" % quiet_nick, meta=True
+                        )
                 else:
                     self.reply(
                         b"472 %s %s :Unknown MODE flag" % (self.nickname, flag)
@@ -1105,7 +1150,7 @@ class Client:
         message: bytes,
         include_self: bool = False,
     ) -> None:
-        if self.server.message_filtered(message):
+        if self.__quiet or self.server.message_filtered(message):
             return
         line = b":%s %s %s" % (self.prefix, command, message)
         for client in channel.members:
