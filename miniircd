@@ -620,11 +620,13 @@ class Client:
                                 channel,
                                 b"MODE",
                                 b"%s -b %s" % (channel.name, banned_nick),
-                                True,
+                                True
                             )
                             self.server.unban(banned_nick)
                             self.channel_log(
-                                channel, b"Removed ban on %s" % banned_nick, meta=True
+                                channel,
+                                b"Removed ban on %s" % banned_nick,
+                                meta=True
                             )
                         else:
                             self.reply(
@@ -1314,9 +1316,8 @@ class Server:
         self._updateList(self.banned_nicknames, self.banned_filename, True)
 
     def unban(self, nickname: bytes) -> None:
-        if nickname not in self.banned_nicknames:
-            return
-        self.banned_nicknames.remove(nickname)
+        if nickname in self.banned_nicknames:
+            self.banned_nicknames.remove(nickname)
         self._updateList(self.banned_nicknames, self.banned_filename, True)
 
     def add_filter(self, filter_pattern: str) -> None:
@@ -1328,9 +1329,8 @@ class Server:
 
     def remove_filter(self, filter_pattern: str) -> None:
         filter_pattern = filter_pattern.replace('"', '')
-        if filter_pattern not in self.filters:
-            return
-        self.filters.remove(filter_pattern)
+        if filter_pattern in self.filters:
+            self.filters.remove(filter_pattern)
         self._updateList(self.filters, self.filters_filename, False)
 
     def make_pid_file(self, filename: str) -> None:
