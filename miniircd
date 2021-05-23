@@ -520,7 +520,8 @@ class Client:
             for filter_pattern in self.server.filters:
                 if not filter_pattern:
                     continue
-                self.reply(b"%s" % (filter_pattern.encode()))
+                filter_pattern = '"' + filter_pattern + '"'
+                self.reply(b"348 %s - %s" % (self.nickname, filter_pattern.encode()))
             self.reply(b"349 %s :End of FILTERS" % self.nickname)
 
         def bans_handler() -> None:
