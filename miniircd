@@ -582,10 +582,7 @@ class Client:
                                 b"%s +b %s" % (channel.name, banned_nick),
                                 True,
                             )
-                            self.server.banned_nicknames.append(banned_nick)
-                            client = self.server.get_client(banned_nick)
-                            if client:
-                                self.server.remove_client(client, b'banned')
+                            self.server.ban(banned_nick)
                             self.channel_log(
                                 channel, b"Banned %s" % banned_nick, meta=True
                             )
@@ -1127,6 +1124,7 @@ class Server:
         self.max_clients = args.max_clients
         self.max_channels = args.max_channels
         self.passwords_filename = os.path.join(args.state_dir, 'passwords')
+        self.banned_filename = os.path.join(args.state_dir, 'banned')
         self.write_lock = False
         self.banned_nicknames = []
         self.total_members = 0
@@ -1164,6 +1162,35 @@ class Server:
             create_directory(self.channel_log_dir)
         if self.state_dir:
             create_directory(self.state_dir)
+        # load the banned nicknames list
+        if os.path.isfile(self.banned_filename):
+            try:
+                with open(self.banned_filename, 'r') as ban_file:
+                    bannedListStr = ban_file.read()
+                    bannedList = bannedListStr.split('\n')
+                    for nick in bannedList:
+                        self.banned_nicknames.append(nickname.encode())
+            except BaseException:
+                pass
+
+    def ban(self, nickname: bytes) -> None:
+        if nickname in self.banned_nicknames:
+            return
+        self.banned_nicknames.append(nickname)
+        client = self.server.get_client(banned_nick)
+        if client:
+            self.server.remove_client(client, b'banned')
+        bannedListStr = ''
+        for nick in self.banned_nicknames:
+            bannedListStr += nick.decode('utf-8') + '\n'
+        writeMode = 'a+'
+        if not os.path.isfile(self.banned_filename):
+            writeMode = 'w+'
+        try:
+            with open(self.banned_filename, writeMode) as ban_file:
+                ban_file.write(bannedListStr)
+        except BaseException:
+            pass
 
     def make_pid_file(self, filename: str) -> None:
         try:
