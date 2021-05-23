@@ -683,19 +683,19 @@ class Client:
                 if not client:
                     self.reply(b"401 %s %s :Nickname not found"
                                % (self.nickname, kicknick))
-                    return
+                    continue
                 if client is self:
                     self.reply(
                         b"433 %s %s :Nickname is already in use"
                         % (self.nickname, kicknick)
                     )
-                    return
+                    continue
                 if client.oper:
                     self.reply(
                         b"481 %s %s :Permission denied"
                         % (self.nickname, kicknick)
                     )
-                    return
+                    continue
                 reason = b'kicked'
                 if len(arguments) > 1:
                     reason = b''
@@ -769,6 +769,26 @@ class Client:
                 self.message((f"Identify success").encode())
             else:
                 self.message((f"Identify failed").encode())
+
+        def filter_handler() -> None:
+            if len(arguments) < 1:
+                self.reply_461(b"FILTER")
+                return
+            if not self.is_operator:
+                self.reply(b"481 %s :Permission denied" % (self.nickname))
+                self.message((f"Only operators can add filter patterns").encode())
+                return
+            self.server.add_filter(arguments[0].decode('utf-8'))
+
+        def unfilter_handler() -> None:
+            if len(arguments) < 1:
+                self.reply_461(b"UNFILTER")
+                return
+            if not self.is_operator:
+                self.reply(b"481 %s :Permission denied" % (self.nickname))
+                self.message((f"Only operators can remove filter patterns").encode())
+                return
+            self.server.remove_filter(arguments[0].decode('utf-8'))
 
         def notice_and_privmsg_handler() -> None:
             if len(arguments) == 0:
@@ -966,6 +986,7 @@ class Client:
 
         handler_table = {
             b"AWAY": away_handler,
+            b"FILTER": filter_handler,
             b"IDENTIFY": identify_handler,
             b"ISON": ison_handler,
             b"JOIN": join_handler,
@@ -985,6 +1006,7 @@ class Client:
             b"REGISTER": register_handler,
             b"SETPASSWORD": setpassword_handler,
             b"TOPIC": topic_handler,
+            b"UNFILTER": unfilter_handler,
             b"WALLOPS": wallops_handler,
             b"WHO": who_handler,
             b"WHOIS": whois_handler,
@@ -1049,6 +1071,15 @@ class Client:
         nickname = self.nickname or b"*"
         self.reply(b"461 %s %s :Not enough parameters" % (nickname, command))
 
+    def _message_filtered(self, message: bytes) -> bool:
+        messageStr = message.decode('utf-8')
+        for filter_pattern in self.server.filters:
+            match_message = \
+                filter_pattern.replace('*', '.+').replace('?', '.')
+            if re.search(match_message, messageStr):
+                return True
+        return False
+
     def message_channel(
         self,
         channel: Channel,
@@ -1056,6 +1087,8 @@ class Client:
         message: bytes,
         include_self: bool = False,
     ) -> None:
+        if self._message_filtered(message):
+            return
         line = b":%s %s %s" % (self.prefix, command, message)
         for client in channel.members:
             if client != self or include_self:
@@ -1135,8 +1168,10 @@ class Server:
         self.max_channels = args.max_channels
         self.passwords_filename = os.path.join(args.state_dir, 'passwords')
         self.banned_filename = os.path.join(args.state_dir, 'banned')
+        self.filters_filename = os.path.join(args.state_dir, 'filters')
         self.write_lock = False
         self.banned_nicknames = []
+        self.filters = []
         self.total_members = 0
         self.name: bytes
 
@@ -1172,6 +1207,7 @@ class Server:
             create_directory(self.channel_log_dir)
         if self.state_dir:
             create_directory(self.state_dir)
+
         # load the banned nicknames list
         if os.path.isfile(self.banned_filename):
             try:
@@ -1180,6 +1216,17 @@ class Server:
                     bannedList = bannedListStr.split('\n')
                     for nick in bannedList:
                         self.banned_nicknames.append(nick.encode())
+            except BaseException:
+                pass
+
+        # load filters
+        if os.path.isfile(self.filters_filename):
+            try:
+                with open(self.filters_filename, 'r') as filters_file:
+                    filtersListStr = filters_file.read()
+                    filtersList = filtersListStr.split('\n')
+                    for filterStr in filtersList:
+                        self.filters.append(filtersStr)
             except BaseException:
                 pass
 
@@ -1223,6 +1270,42 @@ class Server:
         try:
             with open(self.banned_filename, writeMode) as ban_file:
                 ban_file.write(bannedListStr)
+        except BaseException:
+            pass
+
+    def add_filter(self, filter_pattern: str) -> None:
+        filter_pattern = filter_pattern.replace('"', '')
+        if filter_pattern in self.filters:
+            return
+        self.filters.append(filter_pattern)
+
+        filtersListStr = ''
+        for filter_pattern in self.filters:
+            filtersListStr += filter_pattern + '\n'
+        writeMode = 'a+'
+        if not os.path.isfile(self.filters_filename):
+            writeMode = 'w+'
+        try:
+            with open(self.filters_filename, writeMode) as filters_file:
+                filters_file.write(filtersListStr)
+        except BaseException:
+            pass
+
+    def remove_filter(self, filter_pattern: str) -> None:
+        filter_pattern = filter_pattern.replace('"', '')
+        if filter_pattern not in self.filters:
+            return
+        self.filters.remove(filter_pattern)
+
+        filtersListStr = ''
+        for filter_pattern in self.filters:
+            filtersListStr += filter_pattern + '\n'
+        writeMode = 'a+'
+        if not os.path.isfile(self.filters_filename):
+            writeMode = 'w+'
+        try:
+            with open(self.filters_filename, writeMode) as filters_file:
+                filters_file.write(filtersListStr)
         except BaseException:
             pass
 
