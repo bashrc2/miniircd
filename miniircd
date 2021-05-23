@@ -527,7 +527,7 @@ class Client:
                 return
             self.server.banned_nicknames.sort()
             for ban in self.server.banned_nicknames:
-                self.reply(b"367 %s - %s" % (self.nickname, ban))
+                self.reply(b"367 %s - %s -" % (self.nickname, ban))
             self.reply(b"368 %s :End of BANS" % self.nickname)
 
         def lusers_handler() -> None:
