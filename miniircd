@@ -1241,6 +1241,22 @@ class Server:
                     return True
         return False
 
+    def _updateList(lst: [], filename: str, decode: bool) -> None:
+        listStr = ''
+        for s in lst:
+            if decode:
+                listStr += s.decode('utf-8') + '\n'
+            else:
+                listStr += s + '\n'
+        writeMode = 'a+'
+        if not os.path.isfile(filename):
+            writeMode = 'w+'
+        try:
+            with open(filename, writeMode) as f:
+                f.write(listStr)
+        except BaseException:
+            pass        
+    
     def ban(self, nickname: bytes) -> None:
         if nickname in self.banned_nicknames:
             return
@@ -1261,71 +1277,27 @@ class Server:
             client = self.get_client(nickname)
             if client:
                 self.remove_client(client, b'banned')
-
-        bannedListStr = ''
-        for nick in self.banned_nicknames:
-            bannedListStr += nick.decode('utf-8') + '\n'
-        writeMode = 'a+'
-        if not os.path.isfile(self.banned_filename):
-            writeMode = 'w+'
-        try:
-            with open(self.banned_filename, writeMode) as ban_file:
-                ban_file.write(bannedListStr)
-        except BaseException:
-            pass
+        self._updateList(self.banned_nicknames, self.banned_filename, True)
 
     def unban(self, nickname: bytes) -> None:
         if nickname not in self.banned_nicknames:
             return
         self.banned_nicknames.remove(nickname)
-
-        bannedListStr = ''
-        for nick in self.banned_nicknames:
-            bannedListStr += nick.decode('utf-8') + '\n'
-        writeMode = 'a+'
-        if not os.path.isfile(self.banned_filename):
-            writeMode = 'w+'
-        try:
-            with open(self.banned_filename, writeMode) as ban_file:
-                ban_file.write(bannedListStr)
-        except BaseException:
-            pass
+        self._updateList(self.banned_nicknames, self.banned_filename, True)
 
     def add_filter(self, filter_pattern: str) -> None:
         filter_pattern = filter_pattern.replace('"', '')
         if filter_pattern in self.filters:
             return
         self.filters.append(filter_pattern)
-
-        filtersListStr = ''
-        for filter_pattern in self.filters:
-            filtersListStr += filter_pattern + '\n'
-        writeMode = 'a+'
-        if not os.path.isfile(self.filters_filename):
-            writeMode = 'w+'
-        try:
-            with open(self.filters_filename, writeMode) as filters_file:
-                filters_file.write(filtersListStr)
-        except BaseException:
-            pass
+        self._updateList(self.filters, self.filters_filename, False)
 
     def remove_filter(self, filter_pattern: str) -> None:
         filter_pattern = filter_pattern.replace('"', '')
         if filter_pattern not in self.filters:
             return
         self.filters.remove(filter_pattern)
-
-        filtersListStr = ''
-        for filter_pattern in self.filters:
-            filtersListStr += filter_pattern + '\n'
-        writeMode = 'a+'
-        if not os.path.isfile(self.filters_filename):
-            writeMode = 'w+'
-        try:
-            with open(self.filters_filename, writeMode) as filters_file:
-                filters_file.write(filtersListStr)
-        except BaseException:
-            pass
+        self._updateList(self.filters, self.filters_filename, False)
 
     def make_pid_file(self, filename: str) -> None:
         try:
