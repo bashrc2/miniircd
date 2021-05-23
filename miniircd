@@ -821,6 +821,20 @@ class Client:
                 return
             channelname = arguments[0]
             channel = self.channels.get(irc_lower(channelname))
+
+            # if there is no topic then you can set it,
+            # otherwise you need oper status
+            topic_exists = False
+            if channel:
+                if channel.topic:
+                    topic_exists = True
+
+            if topic_exists and not self.is_operator:
+                self.reply(
+                    b"482 %s :Don't have permission to change topic"
+                    % (self.nickname)
+                )
+                return
             if channel:
                 if len(arguments) > 1:
                     newtopic = arguments[1]
