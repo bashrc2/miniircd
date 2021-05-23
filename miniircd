@@ -1066,15 +1066,6 @@ class Client:
         nickname = self.nickname or b"*"
         self.reply(b"461 %s %s :Not enough parameters" % (nickname, command))
 
-    def _message_filtered(self, message: bytes) -> bool:
-        messageStr = message.decode('utf-8')
-        for filter_pattern in self.server.filters:
-            match_message = \
-                filter_pattern.replace('*', '.+').replace('?', '.')
-            if re.search(match_message, messageStr):
-                return True
-        return False
-
     def message_channel(
         self,
         channel: Channel,
@@ -1082,7 +1073,7 @@ class Client:
         message: bytes,
         include_self: bool = False,
     ) -> None:
-        if self._message_filtered(message):
+        if self.server.message_filtered(message):
             return
         line = b":%s %s %s" % (self.prefix, command, message)
         for client in channel.members:
@@ -1225,6 +1216,15 @@ class Server:
             except BaseException:
                 pass
 
+    def message_filtered(self, message: bytes) -> bool:
+        messageStr = message.decode('utf-8')
+        for filter_pattern in self.filters:
+            match_message = \
+                filter_pattern.replace('*', '.+').replace('?', '.')
+            if re.search(match_message, messageStr):
+                return True
+        return False
+
     def nickname_is_banned(self, nickname: bytes) -> bool:
         if nickname in self.banned_nicknames:
             return True
@@ -1234,6 +1234,8 @@ class Server:
                 search_pattern = nick.decode('utf-8')
                 if re.search(search_pattern, nicknameStr):
                     return True
+        if self.message_filtered(nickname):
+            return True
         return False
 
     def _updateList(lst: [], filename: str, decode: bool) -> None:
