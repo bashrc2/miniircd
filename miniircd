@@ -802,12 +802,17 @@ class Client:
                 self.message((f"Only operators can add filter patterns").encode())
                 return
             filter_command = arguments[0].decode('utf-8').lower()
+            filterStr = ''
+            for index in range(1, len(arguments)):
+                if index > 1:
+                    filterStr += ' '
+                filterStr += arguments[index].decode('utf-8')
             if filter_command == 'add':
-                self.server.add_filter(arguments[1].decode('utf-8'))
+                self.server.add_filter(filterStr)
             elif filter_command == 'remove' or \
                  filter_command == 'rm' or \
                  filter_command == 'delete':
-                self.server.remove_filter(arguments[1].decode('utf-8'))
+                self.server.remove_filter(filterStr)
 
         def notice_and_privmsg_handler() -> None:
             if len(arguments) == 0:
