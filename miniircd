@@ -176,6 +176,42 @@ class Client:
     def oper(self) -> bool:
         return self.is_operator
 
+    @oper.setter
+    def oper(self, value: bool) -> None:
+        lines = []
+        try:
+            with open(self.server.passwords_filename, 'r') as fp:
+                fileStr = fp.read()
+                lines = fileStr.split('\n')                
+        except BaseException:
+            return
+
+        if not lines:
+            return
+
+        changed = False
+        for line in lines:
+            if line.startswith(self.nickname.decode('utf-8') + ' '):
+                if value and not line.endswith('oper'):
+                    line = line.strip() + ' oper'
+                    changed = True
+                elif not value and line.endswith('oper'):
+                    line = line.replace(' oper', '')
+                    changed = True
+                break
+        if changed:
+            fileStr = ''
+            for line in lines:
+                if not line:
+                    continue
+                fileStr += line + '\n'
+            try:
+                with open(self.server.passwords_filename, 'w+') as fp:
+                    fp.write(fileStr)
+            except BaseException:
+                return
+        self.is_operator = value
+
     @property
     def quiet(self) -> bool:
         return self.__quiet
@@ -679,6 +715,27 @@ class Client:
                         self.channel_log(
                             channel, b"Removed quiet on %s" % quiet_nick, meta=True
                         )
+                elif flag == b"+o":
+                    if len(arguments) < 4:
+                        self.reply_461(b"MODE")
+                        return
+                    if irc_lower(channel.name) in self.channels:
+                        newop_nick = arguments[3]
+                        self.message_channel(
+                            channel,
+                            b"MODE",
+                            b"%s +o %s" % (channel.name, newop_nick),
+                            True
+                        )
+                        client = server.get_client(newop_nick)
+                        if client:
+                            client.oper = True
+                            if client.oper:
+                                self.channel_log(
+                                    channel,
+                                    b"Set as operator %s" % newop_nick,
+                                    meta=True
+                                )
                 else:
                     self.reply(
                         b"472 %s %s :Unknown MODE flag" % (self.nickname, flag)
