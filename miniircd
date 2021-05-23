@@ -1231,22 +1231,24 @@ class Server:
                     bannedListStr = ban_file.read()
                     bannedList = bannedListStr.split('\n')
                     for nick in bannedList:
-                        if nick.encode() not in self.banned_nicknames:
-                            self.banned_nicknames.append(nick.encode())
+                        nick = nick.encode()
+                        if nick not in self.banned_nicknames:
+                            self.banned_nicknames.append(nick)
             except BaseException:
                 pass
 
         # load filters
         if os.path.isfile(self.filters_filename):
-            try:
+            #try:
                 with open(self.filters_filename, 'r') as filters_file:
                     filtersListStr = filters_file.read()
                     filtersList = filtersListStr.split('\n')
                     for filterStr in filtersList:
                         if filterStr not in self.filters:
                             self.filters.append(filtersStr)
-            except BaseException:
-                pass
+            #except BaseException:
+            #    pass
+            print('filters: ' + str(self.filters))
 
     def message_filtered(self, message: bytes) -> bool:
         messageStr = message.decode('utf-8')
