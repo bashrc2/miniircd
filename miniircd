@@ -519,12 +519,12 @@ class Client:
             if len(arguments) < 1:
                 self.reply_461(b"MODE")
                 return
-            if not self.is_operator:
-                self.reply(b"481 %s :Mode change permission denied" % (self.nickname))
-                return
             print('mode_handler 2 ' + str(arguments))
             targetname = arguments[0]
             if self.server.has_channel(targetname):
+                if not self.is_operator:
+                    self.reply(b"481 %s :Mode change permission denied" % (self.nickname))
+                    return
                 channel = self.server.get_channel(targetname)
                 if len(arguments) < 2:
                     if channel.key:
