@@ -1240,12 +1240,12 @@ class Server:
         # load filters
         if os.path.isfile(self.filters_filename):
             #try:
-                with open(self.filters_filename, 'r') as filters_file:
-                    filtersListStr = filters_file.read()
-                    filtersList = filtersListStr.split('\n')
-                    for filterStr in filtersList:
-                        if filterStr not in self.filters:
-                            self.filters.append(filtersStr)
+            with open(self.filters_filename, 'r') as filters_file:
+                filtersListStr = filters_file.read()
+                filtersList = filtersListStr.split('\n')
+                for filterStr in filtersList:
+                    if filterStr not in self.filters:
+                        self.filters.append(filtersStr)
             #except BaseException:
             #    pass
             print('filters: ' + str(self.filters))
