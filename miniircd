@@ -1315,10 +1315,8 @@ class Server:
         self._updateList(self.banned_nicknames, self.banned_filename, True)
 
     def unban(self, nickname: bytes) -> None:
-        print('banned_nicknames 1 ' + str(self.banned_nicknames))
         if nickname in self.banned_nicknames:
             self.banned_nicknames.remove(nickname)
-        print('banned_nicknames 2 ' + str(self.banned_nicknames))
         self._updateList(self.banned_nicknames, self.banned_filename, True)
 
     def add_filter(self, filter_pattern: str) -> None:
