@@ -599,7 +599,7 @@ class Client:
                                 b"%s -b %s" % (channel.name, banned_nick),
                                 True,
                             )
-                            self.server.banned_nicknames.remove(banned_nick)
+                            self.server.unban(banned_nick)
                             self.channel_log(
                                 channel, b"Removed ban on %s" % banned_nick, meta=True
                             )
@@ -1261,6 +1261,24 @@ class Server:
             client = self.get_client(nickname)
             if client:
                 self.remove_client(client, b'banned')
+
+        bannedListStr = ''
+        for nick in self.banned_nicknames:
+            bannedListStr += nick.decode('utf-8') + '\n'
+        writeMode = 'a+'
+        if not os.path.isfile(self.banned_filename):
+            writeMode = 'w+'
+        try:
+            with open(self.banned_filename, writeMode) as ban_file:
+                ban_file.write(bannedListStr)
+        except BaseException:
+            pass
+
+    def unban(self, nickname: bytes) -> None:
+        if nickname not in self.banned_nicknames:
+            return
+        self.banned_nicknames.remove(nickname)
+
         bannedListStr = ''
         for nick in self.banned_nicknames:
             bannedListStr += nick.decode('utf-8') + '\n'
