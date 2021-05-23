@@ -519,7 +519,7 @@ class Client:
             self.server.filters.sort()
             self.reply(b"321 %s :Start of FILTERS" % self.nickname)
             for filter_pattern in self.server.filters:
-                self.reply(b"322 %s %s" % (self.nickname, filter_pattern.encode()))
+                self.reply(b"322 %s - %s" % (self.nickname, filter_pattern.encode()))
             self.reply(b"323 %s :End of FILTERS" % self.nickname)
 
         def bans_handler() -> None:
@@ -529,7 +529,7 @@ class Client:
             self.server.banned_nicknames.sort()
             self.reply(b"321 %s :Start of BANS" % self.nickname)
             for ban in self.server.banned_nicknames:
-                self.reply(b"322 %s %s" % (self.nickname, ban))
+                self.reply(b"322 %s - %s" % (self.nickname, ban))
             self.reply(b"323 %s :End of BANS" % self.nickname)
 
         def lusers_handler() -> None:
@@ -1275,8 +1275,8 @@ class Server:
             with open(filename, writeMode) as f:
                 f.write(listStr)
         except BaseException:
-            pass        
-    
+            pass
+
     def ban(self, nickname: bytes) -> None:
         if nickname in self.banned_nicknames:
             return
