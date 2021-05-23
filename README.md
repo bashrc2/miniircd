@@ -159,6 +159,10 @@ Messages can be filtered. Filters can also contain wildcard characters.
 	/filter add "never gonna give you up"
 	/filter remove "the * sat on the *"
 
+To assign other operators who can help with moderation:
+
+    /mode +o #channel [nickname]
+
 
 License
 -------
