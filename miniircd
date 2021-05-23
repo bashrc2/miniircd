@@ -1259,7 +1259,7 @@ class Server:
             return True
         return False
 
-    def _updateList(lst: [], filename: str, decode: bool) -> None:
+    def _updateList(self, lst: [], filename: str, decode: bool) -> None:
         listStr = ''
         for s in lst:
             if decode:
