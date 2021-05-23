@@ -153,6 +153,10 @@ A kicked user can rejoin a channel though, so if you need to ban:
 And you can remove a ban with:
 
     /mode -b #channel [nickname]
+	
+If the above is too harsh, you can merely mute/quiet:
+
+    /mode +q #channel [nickname]
 
 Messages can be filtered. Filters can also contain wildcard characters.
 
