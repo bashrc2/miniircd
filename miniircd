@@ -1279,11 +1279,13 @@ class Server:
 
     def _updateList(self, lst: [], filename: str, decode: bool) -> None:
         listStr = ''
+        if not decode:
+            listStr = b''
         for s in lst:
             if decode:
                 listStr += s.decode('utf-8') + '\n'
             else:
-                listStr += s + '\n'
+                listStr += s + b'\n'
         writeMode = 'a+'
         if not os.path.isfile(filename):
             writeMode = 'w+'
