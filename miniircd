@@ -668,12 +668,13 @@ class Client:
             if kicknick == self.nickname:
                 pass
             kicknick = kicknick.decode('utf-8')
-            if '*' not in kicknick:
+            if '*' not in kicknick and '?' not in kicknick:
                 kickList = [kicknick.encode()]
             else:
                 kickList = []
                 for client in self.server.clients.values():
-                    search_pattern = kicknick.replace('*', '.+')
+                    search_pattern = \
+                        kicknick.replace('*', '.+').replace('?', '.')
                     nick = client.nickname.decode('utf-8')
                     if re.search(search_pattern, nick):
                         kickList.append(client.nickname)
