@@ -20,7 +20,7 @@ Features
   without sending NACK can connect without long timeouts).
 * Reasonably secure when used with --chroot and --setuid.
 * register/identify accounts
-* opers can kickban
+* opers can kick and ban
 
 
 Limitations
@@ -145,10 +145,14 @@ Basic moderation
 To kick other users you must have oper status. Identify yourself with a password, as above, then to kick:
 
     /kick [nickname]
-	
-Unlike most IRC servers kicking disconnects the user from all channels. This is intended for small scale use where you may only have a few channels on the server and you want minimum administrative overhead. If you made a mistake then you can:
 
-    /unban [nickname]
+A kicked user can rejoin a channel though, so if you need to ban:
+
+    /mode +b #channel [nickname]
+
+And you can remove a ban with:
+
+    /mode -b #channel [nickname]
 
 
 License
