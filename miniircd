@@ -1305,9 +1305,9 @@ class Server:
                 pass
 
     def update_bouncer(self, line: bytes) -> None:
-        self.bouncer.insert(0, line)
+        self.bouncer.append(line)
         while len(self.bouncer) >= self.bouncer_size:
-            self.bouncer.pop()
+            self.bouncer.pop(0)
 
     def bouncer_replay(self, nickname: bytes) -> None:
         client = self.get_client(nickname)
