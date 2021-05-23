@@ -778,9 +778,12 @@ class Client:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 self.message((f"Only operators can add filter patterns").encode())
                 return
-            if arguments[0].decode('utf-8').lower() == 'add':
+            filter_command = arguments[0].decode('utf-8').lower()
+            if filter_command == 'add':
                 self.server.add_filter(arguments[1].decode('utf-8'))
-            elif arguments[0].decode('utf-8').lower() == 'remove':
+            elif filter_command == 'remove' or \
+                 filter_command == 'rm' or \
+                 filter_command == 'delete':
                 self.server.remove_filter(arguments[1].decode('utf-8'))
 
         def notice_and_privmsg_handler() -> None:
