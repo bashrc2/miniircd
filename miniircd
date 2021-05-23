@@ -1286,11 +1286,8 @@ class Server:
                 listStr += s.decode('utf-8') + '\n'
             else:
                 listStr += s + b'\n'
-        writeMode = 'a+'
-        if not os.path.isfile(filename):
-            writeMode = 'w+'
         try:
-            with open(filename, writeMode) as f:
+            with open(filename, 'w+') as f:
                 f.write(listStr)
         except BaseException:
             pass
