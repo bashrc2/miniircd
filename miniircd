@@ -1238,7 +1238,7 @@ class Server:
         self.banned_nicknames = []
         self.filters = []
         self.bouncer = []
-        self.bouncer_size = 128
+        self.bouncer_size = 512
         self.total_members = 0
         self.name: bytes
 
