@@ -628,6 +628,26 @@ class Client:
         def names_handler() -> None:
             self.__send_names(arguments)
 
+        def msg_handler() -> None:
+            if len(arguments) < 3:
+                self.reply_461(b"MSG")
+                return
+            print('msg: 'str(arguments))
+            serv = arguments[0].decode('utf-8')
+            serv_command = arguments[1].decode('utf-8')
+            if serv.lower() == 'nickserv':
+                password = arguments[2].decode('utf-8')
+                if serv_command.lower() == 'register':
+                    if self.__msg_nickserv_register(password):
+                        self.message((f"Register success").encode())
+                    else:
+                        self.message((f"Register failed").encode())
+                elif serv_command.lower() == 'identify':
+                    if self.__msg_nickserv_identify(password):
+                        self.message((f"Identify success").encode())
+                    else:
+                        self.message((f"Identify failed").encode())
+
         def nick_handler() -> None:
             if len(arguments) < 1:
                 self.reply(b"431 :No nickname given")
@@ -754,7 +774,7 @@ class Client:
                 self.is_operator = False
                 self.is_registered = False
                 return
-            password = arguments[0].decode('utf-8').lower()
+            password = arguments[0].decode('utf-8')
             if self.__msg_nickserv_identify(password):
                 self.message((f"Identify success").encode())
             else:
@@ -964,6 +984,7 @@ class Client:
             b"LUSERS": lusers_handler,
             b"MODE": mode_handler,
             b"MOTD": motd_handler,
+            b"MSG": msg_handler,
             b"NAMES": names_handler,
             b"NICK": nick_handler,
             b"NOTICE": notice_and_privmsg_handler,
