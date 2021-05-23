@@ -523,6 +523,9 @@ class Client:
             self.reply(b"323 %s :End of FILTERS" % self.nickname)
 
         def bans_handler() -> None:
+            if not self.is_operator:
+                self.reply(b"481 %s :Bans list permission denied" % (self.nickname))
+                return
             self.server.banned_nicknames.sort()
             self.reply(b"321 %s :Start of BANS" % self.nickname)
             for ban in self.server.banned_nicknames:
