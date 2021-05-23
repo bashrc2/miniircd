@@ -182,7 +182,7 @@ class Client:
         try:
             with open(self.server.passwords_filename, 'r') as fp:
                 fileStr = fp.read()
-                lines = fileStr.split('\n')                
+                lines = fileStr.split('\n')
         except BaseException:
             return
 
@@ -740,6 +740,29 @@ class Client:
                                     b"Set as operator %s" % newop_nick,
                                     meta=True
                                 )
+                elif flag == b"-o":
+                    if len(arguments) < 4:
+                        self.reply_461(b"MODE")
+                        return
+                    if irc_lower(channel.name) in self.channels:
+                        resign_nick = arguments[3]
+                        if resign_nick != self.nickname:
+                            return
+                        self.message_channel(
+                            channel,
+                            b"MODE",
+                            b"%s -o %s" % (channel.name, resign_nick),
+                            True
+                        )
+                        client = server.get_client(resign_nick)
+                        if client:
+                            client.oper = False
+                            if not client.oper:
+                                self.channel_log(
+                                    channel,
+                                    b"Operator %s resigned" % resign_nick,
+                                    meta=True
+                                )
                 else:
                     self.reply(
                         b"472 %s %s :Unknown MODE flag" % (self.nickname, flag)
@@ -1213,7 +1236,7 @@ class Client:
         include_self: bool = False,
     ) -> None:
         if self.__quiet or self.server.message_filtered(message):
-            return        
+            return
         line = b":%s %s %s" % (self.prefix, command, message)
         self.server.update_bouncer(line)
         for client in channel.members:
