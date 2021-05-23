@@ -21,6 +21,7 @@ Features
 * Reasonably secure when used with --chroot and --setuid.
 * register/identify accounts
 * opers can kick and ban
+* Includes a primitive bouncer
 
 
 Limitations
