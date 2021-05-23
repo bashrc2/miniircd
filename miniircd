@@ -499,6 +499,7 @@ class Client:
                         channels.append(self.server.get_channel(channelname))
 
             sorted_channels = sorted(channels, key=lambda x: x.name)
+            self.reply(b"321 %s :Start of LIST" % self.nickname)
             for channel in sorted_channels:
                 self.reply(
                     b"322 %s %s %d :%s"
@@ -512,11 +513,18 @@ class Client:
             self.reply(b"323 %s :End of LIST" % self.nickname)
 
         def filters_handler() -> None:
+            if not self.is_operator:
+                self.reply(b"481 %s :Filters list permission denied" % (self.nickname))
+                return
+            self.server.filters.sort()
+            self.reply(b"321 %s :Start of FILTERS" % self.nickname)
             for filter_pattern in self.server.filters:
                 self.reply(b"322 %s %s" % (self.nickname, filter_pattern.encode()))
             self.reply(b"323 %s :End of FILTERS" % self.nickname)
 
         def bans_handler() -> None:
+            self.server.banned_nicknames.sort()
+            self.reply(b"321 %s :Start of BANS" % self.nickname)
             for ban in self.server.banned_nicknames:
                 self.reply(b"322 %s %s" % (self.nickname, ban))
             self.reply(b"323 %s :End of BANS" % self.nickname)
