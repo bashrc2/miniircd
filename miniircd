@@ -515,11 +515,9 @@ class Client:
             self.send_lusers()
 
         def mode_handler() -> None:
-            print('mode_handler 1')
             if len(arguments) < 1:
                 self.reply_461(b"MODE")
                 return
-            print('mode_handler 2 ' + str(arguments))
             targetname = arguments[0]
             if self.server.has_channel(targetname):
                 if not self.is_operator:
