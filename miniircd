@@ -771,24 +771,17 @@ class Client:
                 self.message((f"Identify failed").encode())
 
         def filter_handler() -> None:
-            if len(arguments) < 1:
+            if len(arguments) < 2:
                 self.reply_461(b"FILTER")
                 return
             if not self.is_operator:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 self.message((f"Only operators can add filter patterns").encode())
                 return
-            self.server.add_filter(arguments[0].decode('utf-8'))
-
-        def unfilter_handler() -> None:
-            if len(arguments) < 1:
-                self.reply_461(b"UNFILTER")
-                return
-            if not self.is_operator:
-                self.reply(b"481 %s :Permission denied" % (self.nickname))
-                self.message((f"Only operators can remove filter patterns").encode())
-                return
-            self.server.remove_filter(arguments[0].decode('utf-8'))
+            if arguments[0].decode('utf-8').lower() == 'add':
+                self.server.add_filter(arguments[1].decode('utf-8'))
+            elif arguments[0].decode('utf-8').lower() == 'remove':
+                self.server.remove_filter(arguments[1].decode('utf-8'))
 
         def notice_and_privmsg_handler() -> None:
             if len(arguments) == 0:
@@ -1006,7 +999,6 @@ class Client:
             b"REGISTER": register_handler,
             b"SETPASSWORD": setpassword_handler,
             b"TOPIC": topic_handler,
-            b"UNFILTER": unfilter_handler,
             b"WALLOPS": wallops_handler,
             b"WHO": who_handler,
             b"WHOIS": whois_handler,

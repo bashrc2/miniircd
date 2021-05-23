@@ -154,6 +154,11 @@ And you can remove a ban with:
 
     /mode -b #channel [nickname]
 
+Messages can be filtered. Filters can also contain wildcard characters.
+
+	/filter add "never gonna give you up"
+	/filter remove "the * sat on the *"
+
 
 License
 -------
