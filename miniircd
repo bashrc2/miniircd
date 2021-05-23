@@ -1231,6 +1231,8 @@ class Server:
                     bannedListStr = ban_file.read()
                     bannedList = bannedListStr.split('\n')
                     for nick in bannedList:
+                        if not nick:
+                            continue
                         nick = nick.encode()
                         if nick not in self.banned_nicknames:
                             self.banned_nicknames.append(nick)
@@ -1244,6 +1246,8 @@ class Server:
                     filtersListStr = filters_file.read()
                     filtersList = filtersListStr.split('\n')
                     for filterStr in filtersList:
+                        if not filterStr:
+                            continue
                         if filterStr not in self.filters:
                             self.filters.append(filterStr)
             except BaseException:
