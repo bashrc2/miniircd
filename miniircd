@@ -1169,7 +1169,7 @@ class Server:
                     bannedListStr = ban_file.read()
                     bannedList = bannedListStr.split('\n')
                     for nick in bannedList:
-                        self.banned_nicknames.append(nickname.encode())
+                        self.banned_nicknames.append(nick.encode())
             except BaseException:
                 pass
 
