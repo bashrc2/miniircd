@@ -654,7 +654,7 @@ class Client:
                             b"%s +q %s" % (channel.name, quiet_nick),
                             True
                         )
-                        client = self.get_client(quiet_nick)
+                        client = server.get_client(quiet_nick)
                         if client:
                             client.quiet = True
                         self.channel_log(
@@ -672,7 +672,7 @@ class Client:
                             b"%s -q %s" % (channel.name, quiet_nick),
                             True
                         )
-                        client = self.get_client(quiet_nick)
+                        client = server.get_client(quiet_nick)
                         if client:
                             client.quiet = False
                         self.channel_log(
