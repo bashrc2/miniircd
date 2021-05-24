@@ -1,3 +1,5 @@
+![miniircd](img/logo.png)
+
 miniircd -- A (very) simple Internet Relay Chat (IRC) server
 ============================================================
 
