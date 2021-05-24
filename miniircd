@@ -159,6 +159,9 @@ class Client:
         self.port = port
         if self.server.cloak:
             self.host = self.server.cloak
+        self.__last_message = int(time.time())
+        self.__flood_score = 0
+        self.__flood_time = 0
         self.__timestamp = time.time()
         self.__readbuffer = b""
         self.__writebuffer = b""
@@ -1337,8 +1340,35 @@ class Client:
         message: bytes,
         include_self: bool = False,
     ) -> None:
+        if self.__flood_time > 0:
+            curr_time = int(time.time())
+            time_diff = curr_time - self.__flood_time
+            if time_diff < 240:
+                # reject messages for a while if flooding was detected
+                return
+            else:
+                self.__flood_time = 0
+
         if self.__quiet or self.server.message_filtered(message):
             return
+
+        # flood detection
+        curr_time = int(time.time())
+        time_diff = curr_time - self.__last_message
+        self.__last_message = curr_time
+        if time_diff < 10:
+            if time_diff > 5:
+                self.__flood_score += 1
+            if time_diff < 3:
+                self.__flood_score += 3
+            else:
+                self.__flood_score += 2
+            if self.__flood_score >= self.server.max_flood_score:
+                self.__flood_time = curr_time
+                return
+        else:
+            self.__flood_score = 0
+
         line = b":%s %s %s" % (self.prefix, command, message)
         self.server.update_bouncer(line)
         for client in channel.members:
@@ -1423,6 +1453,7 @@ class Server:
         self.filters_filename = os.path.join(args.state_dir, 'filters')
         self.registered_only = False
         self.new_registrations = args.new_registrations
+        self.max_flood_score = args.max_flood_score
         self.write_lock = False
         self.banned_nicknames = []
         self.dropped_channels = []
@@ -1913,6 +1944,12 @@ def main() -> None:
         default=128,
         type=int,
         help="Number of new registrations allowed",
+    )
+    ap.add_argument(
+        "--max-flood-score",
+        default=4,
+        type=int,
+        help="Maximum score for flood detection",
     )
     ap.add_argument(
         "--max-channels",
