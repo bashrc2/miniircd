@@ -489,6 +489,9 @@ class Client:
         return 0
 
     def __msg_nickserv_register(self, password: str) -> bool:
+        if self.server.new_registrations <= 0:
+            self.reply(b"406 %s :New registrations closed" % (self.nickname))
+            return False
         register_nick = self.nickname.decode('utf-8')
         if register_nick.endswith('_'):
             self.reply(
@@ -505,6 +508,7 @@ class Client:
             self.reply(b"424 %s :File error" % (self.nickname))
             self.server.write_lock = False
             return False
+        self.server.new_registrations -= 1
         return True
 
     def __msg_nickserv_identify(self, password: str) -> bool:
@@ -906,6 +910,18 @@ class Client:
             else:
                 self.message((f"Register failed").encode())
 
+        def newreg_handler() -> None:
+            if len(arguments) < 1:
+                self.reply_461(b"NEWREG")
+                return
+            if not self.is_operator:
+                self.reply(b"481 %s :Permission denied" % (self.nickname))
+                return
+            new_registrations = arguments[0].decode('utf-8')
+            if new_registrations.isdigit():
+                self.server.new_registrations = int(new_registrations)
+                self.message(b"New registrations: %s" % new_registrations)
+
         def setpassword_handler() -> None:
             if self.server.write_lock:
                 return
@@ -1198,6 +1214,7 @@ class Client:
             b"MODE": mode_handler,
             b"MOTD": motd_handler,
             b"NAMES": names_handler,
+            b"NEWREG": newreg_handler,
             b"NICK": nick_handler,
             b"NOTICE": notice_and_privmsg_handler,
             b"PART": part_handler,
@@ -1363,6 +1380,7 @@ class Server:
         self.banned_filename = os.path.join(args.state_dir, 'banned')
         self.filters_filename = os.path.join(args.state_dir, 'filters')
         self.registered_only = False
+        self.new_registrations = args.new_registrations
         self.write_lock = False
         self.banned_nicknames = []
         self.filters = []
@@ -1794,6 +1812,12 @@ def main() -> None:
         default=128,
         type=int,
         help="Maximum clients on the server",
+    )
+    ap.add_argument(
+        "--new-registrations",
+        default=128,
+        type=int,
+        help="Number of new registrations allowed",
     )
     ap.add_argument(
         "--max-channels",
