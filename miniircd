@@ -341,6 +341,12 @@ class Client:
         else:
             keys = []
         for i, channelname in enumerate(channelnames):
+            if not server.nickname_is_banned(channelname):
+                self.reply(
+                    b"405 %s %s :Too many channels"
+                    % (self.nickname, channelname)
+                )
+                continue
             if for_join and irc_lower(channelname) in self.channels:
                 continue
             if not valid_channel_re.match(channelname):
