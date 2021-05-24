@@ -1468,6 +1468,11 @@ class Server:
             self.remove_client(imposter, b'imposter')
             genuine.nickname = true_nickname
             self.client_changed_nickname(genuine, curr_nickname)
+            genuine.message_related(
+                b":%s!%s@%s NICK %s"
+                % (curr_nickname, genuine.user, genuine.host, true_nickname),
+                True,
+            )
 
     def update_bouncer(self, line: bytes) -> None:
         self.bouncer.append(line)
