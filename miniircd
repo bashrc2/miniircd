@@ -1549,19 +1549,15 @@ class Server:
 
     def channel_is_banned(self, channelname: bytes) -> bool:
         if channelname in self.dropped_channels:
-            print(channelname.decode('utf-8') + ' is banned')
             return True
         channelnameStr = channelname.decode('utf-8')
         for nick in self.banned_nicknames:
             if b'*' in nick or b'?' in nick:
                 search_pattern = nick.decode('utf-8')
                 if re.search(search_pattern, channelnameStr):
-                    print(channelname.decode('utf-8') + ' is banned')
                     return True
         if self.message_filtered(channelname):
-            print(channelname.decode('utf-8') + ' is filtered')
             return True
-        print(channelname.decode('utf-8') + ' is allowed')
         return False
 
     def _updateList(self, lst: [], filename: str, decode: bool) -> None:
