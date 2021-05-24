@@ -609,6 +609,17 @@ class Client:
                 self.reply(b"367 %s - %s -" % (self.nickname, ban))
             self.reply(b"368 %s :End of BANS" % self.nickname)
 
+        def chanbans_handler() -> None:
+            if not self.is_operator:
+                self.reply(b"481 %s :Chanbans list permission denied" % (self.nickname))
+                return
+            self.server.dropped_channels.sort()
+            for ban in self.server.dropped_channels:
+                if not ban:
+                    continue
+                self.reply(b"367 %s - %s -" % (self.nickname, ban))
+            self.reply(b"368 %s :End of CHANBANS" % self.nickname)
+
         def lusers_handler() -> None:
             self.send_lusers()
 
@@ -1231,6 +1242,7 @@ class Client:
         handler_table = {
             b"AWAY": away_handler,
             b"BANS": bans_handler,
+            b"CHANBANS": chanbans_handler,
             b"DROP": drop_handler,
             b"FILTER": filter_handler,
             b"FILTERS": filters_handler,
