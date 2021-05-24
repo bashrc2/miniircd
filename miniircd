@@ -557,6 +557,9 @@ class Client:
                 self.reply_461(b"JOIN")
                 return
             if arguments[0] == b"0":
+                if not self.is_operator:
+                    self.reply(b"481 %s :Permission denied" % (self.nickname))
+                    return
                 for (channelname, channel) in self.channels.items():
                     self.message_channel(channel, b"PART", channelname, True)
                     self.channel_log(channel, b"left", meta=True)
