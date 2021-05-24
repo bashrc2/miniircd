@@ -780,23 +780,25 @@ class Client:
                                     meta=True
                                 )
                 elif flag == b"+M" or flag == b"+R":
-                    if not self.server.registered_only:
-                        self.server.registered_only = True
-                        self.message_channel(
-                            channel,
-                            b"MODE",
-                            b"%s -M" % (channel.name),
-                            True
-                        )
+                    if irc_lower(channel.name) in self.channels:
+                        if not self.server.registered_only:
+                            self.server.registered_only = True
+                            self.message_channel(
+                                channel,
+                                b"MODE",
+                                b"%s -M" % (channel.name),
+                                True
+                            )
                 elif flag == b"-M" or flag == b"-R":
-                    if self.server.registered_only:
-                        self.server.registered_only = False
-                        self.message_channel(
-                            channel,
-                            b"MODE",
-                            b"%s -M" % (channel.name),
-                            True
-                        )
+                    if irc_lower(channel.name) in self.channels:
+                        if self.server.registered_only:
+                            self.server.registered_only = False
+                            self.message_channel(
+                                channel,
+                                b"MODE",
+                                b"%s -M" % (channel.name),
+                                True
+                            )
                 else:
                     self.reply(
                         b"472 %s %s :Unknown MODE flag" % (self.nickname, flag)

@@ -167,6 +167,10 @@ Messages can be filtered. Filters can also contain wildcard characters.
 To assign other operators who can help with moderation:
 
     /mode +o #channel [nickname]
+	
+To only allow registered users onto channels:
+
+    /mode +M
 
 
 License
