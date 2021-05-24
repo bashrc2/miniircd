@@ -1698,7 +1698,7 @@ class Server:
 
     def remove_channel(self, channelname: bytes) -> None:
         if irc_lower(channelname) in self.channels:
-            del self.channels[irc_lower(channel.name)]
+            del self.channels[irc_lower(channelname)]
 
     def start(self) -> None:
         serversockets = []
