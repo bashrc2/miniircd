@@ -786,7 +786,7 @@ class Client:
                             self.message_channel(
                                 channel,
                                 b"MODE",
-                                b"%s -M" % (channel.name),
+                                b"%s +M" % (channel.name),
                                 True
                             )
                 elif flag == b"-M" or flag == b"-R":
