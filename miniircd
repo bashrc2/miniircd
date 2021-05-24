@@ -1367,7 +1367,9 @@ class Client:
                 self.__flood_score += 2
             if self.__flood_score >= self.server.max_flood_score:
                 self.__flood_time = curr_time
-                print('Flood detected from ' + self.nickname.decode('utf-8'))
+                print('Flood detected from ' +
+                      self.nickname.decode('utf-8') +
+                      ' score=' + str(self.__flood_score))
                 return
         else:
             self.__flood_score = 0
