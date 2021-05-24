@@ -162,6 +162,7 @@ class Client:
         self.__last_message = int(time.time())
         self.__flood_score = 0
         self.__flood_time = 0
+        self.__bouncer_replay_active = False
         self.__timestamp = time.time()
         self.__readbuffer = b""
         self.__writebuffer = b""
@@ -179,6 +180,10 @@ class Client:
     @property
     def oper(self) -> bool:
         return self.is_operator
+
+    @oper.setter
+    def bouncer_replay_active(self, value: bool) -> None:
+        self.__bouncer_replay_active = value
 
     @oper.setter
     def oper(self, value: bool) -> None:
@@ -1358,7 +1363,7 @@ class Client:
         curr_time = int(time.time())
         time_diff = curr_time - self.__last_message
         self.__last_message = curr_time
-        if time_diff < 10:
+        if not self.__bouncer_replay_active and time_diff < 10:
             if time_diff > 5:
                 self.__flood_score += 1
             if time_diff < 3:
@@ -1571,8 +1576,10 @@ class Server:
         client = self.get_client(nickname)
         if not client:
             return
+        client.bouncer_replay_active = True
         for line in self.bouncer:
             client.message(line)
+        client.bouncer_replay_active = False
 
     def message_filtered(self, message: bytes) -> bool:
         messageStr = message.decode('utf-8')
