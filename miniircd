@@ -529,8 +529,7 @@ class Client:
             self.is_registered = False
             self.reply(b"401 %s :No such nick" % self.nickname)
             return False
-        else:
-            self.server.remove_imposters(self, self.nickname, nickname)
+        self.server.remove_imposters(self, nickname.encode())
         return True
 
     def __command_handler(
@@ -1458,7 +1457,8 @@ class Server:
             except BaseException:
                 pass
 
-    def remove_imposters(self, genuine, curr_nickname: str, true_nickname: str) -> None:
+    def remove_imposters(self, genuine, true_nickname: bytes) -> None:
+        curr_nickname = genuine.nickname
         if curr_nickname == true_nickname:
             genuine.message((f"No imposters").encode())
             return
