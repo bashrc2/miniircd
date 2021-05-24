@@ -829,12 +829,13 @@ class Client:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 return
             channelname = arguments[0]
-            channel = self.channels.get(irc_lower(channelname))
+            channel = self.server.get_channel(irc_lower(channelname))
             if not channel:
                 return
             for client in self.server.clients.values():
                 self.server.remove_member_from_channel(client, channelname)
             self.server.remove_channel(channel)
+            self.reply(b"403 %s Channel dropped %s" % self.nickname, channelname)
 
         def nick_handler() -> None:
             if len(arguments) < 1:
