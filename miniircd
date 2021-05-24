@@ -530,7 +530,7 @@ class Client:
             self.reply(b"401 %s :No such nick" % self.nickname)
             return False
         else:
-            self.server.remove_imposters(self.nickname, nickname)
+            self.server.remove_imposters(self, self.nickname, nickname)
         return True
 
     def __command_handler(
@@ -1458,17 +1458,16 @@ class Server:
             except BaseException:
                 pass
 
-    def remove_imposters(self, curr_nickname: str, true_nickname: str) -> None:
+    def remove_imposters(self, genuine, curr_nickname: str, true_nickname: str) -> None:
         if curr_nickname == true_nickname:
+            genuine.message((f"No imposters").encode())
             return
         imposter = self.get_client(true_nickname)
         if imposter:
-            genuine = self.get_client(curr_nickname)
-            if genuine:
-                genuine.message((f"Removing imposter").encode())
-                self.remove_client(imposter, b'imposter')
-                genuine.nickname = true_nickname
-                self.client_changed_nickname(genuine, curr_nickname)
+            genuine.message((f"Removing imposter").encode())
+            self.remove_client(imposter, b'imposter')
+            genuine.nickname = true_nickname
+            self.client_changed_nickname(genuine, curr_nickname)
 
     def update_bouncer(self, line: bytes) -> None:
         self.bouncer.append(line)
