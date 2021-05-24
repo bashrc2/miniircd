@@ -511,16 +511,15 @@ class Client:
         self.server.new_registrations -= 1
         return True
 
-    def __msg_nickserv_identify(self, password: str) -> bool:
-        identify_nick = self.nickname.decode('utf-8')
-        salt = self.__get_salt(identify_nick)
+    def __msg_nickserv_identify(self, nickname: str, password: str) -> bool:
+        salt = self.__get_salt(nickname)
         if not salt:
             self.reply(b"406 %s :Not registered" % self.nickname)
             self.is_operator = False
             self.is_registered = False
             return False
         hashed_password = self.__hash_password(salt, password)
-        retval = self.__identify(identify_nick, salt, hashed_password)
+        retval = self.__identify(nickname, salt, hashed_password)
         if retval > 0:
             self.is_registered = True
         if retval > 1:
@@ -530,6 +529,8 @@ class Client:
             self.is_registered = False
             self.reply(b"401 %s :No such nick" % self.nickname)
             return False
+        else:
+            self.server.remove_imposters(self.nickname, nickname)
         return True
 
     def __command_handler(
@@ -979,8 +980,13 @@ class Client:
                 self.is_operator = False
                 self.is_registered = False
                 return
-            password = arguments[0].decode('utf-8')
-            if self.__msg_nickserv_identify(password):
+            if len(arguments) == 2:
+                nickname = arguments[0].decode('utf-8')
+                password = arguments[1].decode('utf-8')
+            else:
+                nickname = self.nickname.decode('utf-8')
+                password = arguments[-1].decode('utf-8')
+            if self.__msg_nickserv_identify(nickname, password):
                 self.message((f"Identify success").encode())
             else:
                 self.message((f"Identify failed").encode())
@@ -1450,6 +1456,17 @@ class Server:
                             self.filters.append(filterStr)
             except BaseException:
                 pass
+
+    def remove_imposters(curr_nickname: str, true_nickname: str) -> None:
+        if curr_nickname == true_nickname:
+            return
+        imposter = self.get_client(true_nickname)
+        if imposter:
+            genuine = self.get_client(curr_nickname)
+            if genuine:
+                self.remove_client(imposter, b'imposter')
+                genuine.nickname = true_nickname
+                self.client_changed_nickname(genuine, curr_nickname)
 
     def update_bouncer(self, line: bytes) -> None:
         self.bouncer.append(line)

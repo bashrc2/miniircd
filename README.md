@@ -133,6 +133,10 @@ To identify yourself connect with your previous nick, then:
 	
 The first account to be registered gets oper status. Note that this applies for all channels.
 
+If there is an imposter occupying your usual nickname then you can identify yourself with your full credentials, and the imposter will be removed.
+
+    /identify [nickname] [password]
+
 A passwords file in the state directory contains password hashes. The word "oper" is appended to any accounts with oper status.
 
 To subsequently change password:
@@ -175,6 +179,8 @@ To only allow registered users:
 To set the allowed number of new registrations:
 
     /newreg [number]
+
+So if you encounter a spam flood then you can allow only registered users on channels and set the new registrations temporarily to zero.
 
 
 License
