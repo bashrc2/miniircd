@@ -1503,8 +1503,9 @@ class Server:
                     for channelStr in channelsList:
                         if not channelStr:
                             continue
+                        channelStr = channelStr.encode()
                         if channelStr not in self.dropped_channels:
-                            self.dropped_channels.append(channelStr.encode())
+                            self.dropped_channels.append(channelStr)
             except BaseException:
                 pass
 
