@@ -363,24 +363,31 @@ class Client:
 
             if for_join:
                 if not server.nickname_is_banned(self.nickname):
-                    if channel.add_member(self):
-                        self.channels[irc_lower(channelname)] = channel
-                        self.message_channel(channel, b"JOIN", channelname, True)
-                        self.channel_log(channel, b"joined", meta=True)
-                        if channel.topic:
-                            self.reply(
-                                b"332 %s %s :%s"
-                                % (self.nickname, channel.name, channel.topic)
-                            )
+                    if self.is_registered or not self.server.registered_only:
+                        if channel.add_member(self):
+                            self.channels[irc_lower(channelname)] = channel
+                            self.message_channel(channel, b"JOIN", channelname, True)
+                            self.channel_log(channel, b"joined", meta=True)
+                            if channel.topic:
+                                self.reply(
+                                    b"332 %s %s :%s"
+                                    % (self.nickname, channel.name, channel.topic)
+                                )
+                            else:
+                                self.reply(
+                                    b"331 %s %s :No topic is set"
+                                    % (self.nickname, channel.name)
+                                )
+                            server.bouncer_replay(self.nickname)
                         else:
                             self.reply(
-                                b"331 %s %s :No topic is set"
+                                b"404 %s %s :Maximum clients on server"
                                 % (self.nickname, channel.name)
                             )
-                        server.bouncer_replay(self.nickname)
+                            continue
                     else:
                         self.reply(
-                            b"404 %s %s :Maximum clients on server"
+                            b"451 %s %s :Not registered"
                             % (self.nickname, channel.name)
                         )
                         continue
@@ -618,10 +625,6 @@ class Client:
                     )
                     return
                 flag = arguments[1]
-                if flag == b"+a":
-                    flag = b"+o"
-                elif flag == b"-a":
-                    flag = b"-o"
                 if flag == b"+k":
                     if len(arguments) < 3:
                         self.reply_461(b"MODE")
@@ -732,7 +735,7 @@ class Client:
                         self.channel_log(
                             channel, b"Removed quiet on %s" % quiet_nick, meta=True
                         )
-                elif flag == b"+o":
+                elif flag == b"+o" or flag == b"+a":
                     if len(arguments) < 4:
                         self.reply_461(b"MODE")
                         return
@@ -753,7 +756,7 @@ class Client:
                                     b"Set as operator %s" % newop_nick,
                                     meta=True
                                 )
-                elif flag == b"-o":
+                elif flag == b"-o" or flag == b"-a":
                     if len(arguments) < 4:
                         self.reply_461(b"MODE")
                         return
@@ -776,6 +779,24 @@ class Client:
                                     b"Operator %s resigned" % resign_nick,
                                     meta=True
                                 )
+                elif flag == b"+M" or flag == b"+R":
+                    if not self.server.registered_only:
+                        self.server.registered_only = True
+                        self.message_channel(
+                            channel,
+                            b"MODE",
+                            b"%s -M" % (channel.name),
+                            True
+                        )
+                elif flag == b"-M" or flag == b"-R":
+                    if self.server.registered_only:
+                        self.server.registered_only = False
+                        self.message_channel(
+                            channel,
+                            b"MODE",
+                            b"%s -M" % (channel.name),
+                            True
+                        )
                 else:
                     self.reply(
                         b"472 %s %s :Unknown MODE flag" % (self.nickname, flag)
@@ -1339,6 +1360,7 @@ class Server:
         self.passwords_filename = os.path.join(args.state_dir, 'passwords')
         self.banned_filename = os.path.join(args.state_dir, 'banned')
         self.filters_filename = os.path.join(args.state_dir, 'filters')
+        self.registered_only = False
         self.write_lock = False
         self.banned_nicknames = []
         self.filters = []
