@@ -182,6 +182,10 @@ To set the allowed number of new registrations:
 
 So if you encounter a spam flood then you can allow only registered users on channels and set the new registrations temporarily to zero.
 
+If the spammer created a spam channel full of spam then you can remove it with:
+
+    /drop #spamchannel
+
 
 License
 -------
