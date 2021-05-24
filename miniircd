@@ -1180,6 +1180,9 @@ class Client:
             if len(arguments) < 1:
                 self.reply_461(b"WALLOPS")
                 return
+            if not self.is_operator:
+                self.reply(b"481 %s :Permission denied" % (self.nickname))
+                return
             message = arguments[0]
             for client in self.server.clients.values():
                 client.message(
