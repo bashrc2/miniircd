@@ -1492,10 +1492,9 @@ class Server:
                         if not channelStr:
                             continue
                         if channelStr not in self.dropped_channels:
-                            self.dropped_channels.append(channelStr)
+                            self.dropped_channels.append(channelStr.encode())
             except BaseException:
                 pass
-        print('Dropped channels:\n' + str(self.dropped_channels))
 
     def remove_imposters(self, genuine, true_nickname: bytes) -> None:
         curr_nickname = genuine.nickname
