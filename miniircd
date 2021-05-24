@@ -1510,6 +1510,42 @@ class Server:
         self._loadList(self.filters, self.filters_filename, False)
         self._loadList(self.dropped_channels, self.dropped_channels_filename, True)
 
+    def _loadList(self, lst: [], filename: str, encodeEntries: bool) -> None:
+        if not os.path.isfile(filename):
+            return
+        try:
+            with open(filename, 'r') as f:
+                listStr = f.read()
+                loadedList = listStr.split('\n')
+                for entryStr in loadedList:
+                    if not entryStr:
+                        continue
+                    if encodeEntries:
+                        entryStr = entryStr.encode()
+                    if entryStr not in lst:
+                        lst.append(entryStr)
+        except BaseException:
+            pass
+
+    def _updateList(self, lst: [], filename: str, decode: bool) -> None:
+        if self.write_lock:
+            return
+        self.write_lock = True
+        listStr = ''
+        if not decode:
+            listStr = b''
+        for s in lst:
+            if decode:
+                listStr += s.decode('utf-8') + '\n'
+            else:
+                listStr += s + b'\n'
+        try:
+            with open(filename, 'w+') as f:
+                f.write(listStr)
+        except BaseException:
+            pass
+        self.write_lock = False
+
     def remove_imposters(self, genuine, true_nickname: bytes) -> None:
         curr_nickname = genuine.nickname
         if curr_nickname == true_nickname:
@@ -1575,42 +1611,6 @@ class Server:
         if self.message_filtered(channelname):
             return True
         return False
-
-    def _loadList(self, lst: [], filename: str, encodeEntries: bool) -> None:
-        if not os.path.isfile(filename):
-            return
-        try:
-            with open(filename, 'r') as f:
-                listStr = f.read()
-                loadedList = listStr.split('\n')
-                for entryStr in loadedList:
-                    if not entryStr:
-                        continue
-                    if encodeEntries:
-                        entryStr = entryStr.encode()
-                    if entryStr not in lst:
-                        lst.append(channelStr)
-        except BaseException:
-            pass
-
-    def _updateList(self, lst: [], filename: str, decode: bool) -> None:
-        if self.write_lock:
-            return
-        self.write_lock = True
-        listStr = ''
-        if not decode:
-            listStr = b''
-        for s in lst:
-            if decode:
-                listStr += s.decode('utf-8') + '\n'
-            else:
-                listStr += s + b'\n'
-        try:
-            with open(filename, 'w+') as f:
-                f.write(listStr)
-        except BaseException:
-            pass
-        self.write_lock = False
 
     def drop_channel(self, channelname: bytes) -> None:
         if channelname not in self.dropped_channels:
