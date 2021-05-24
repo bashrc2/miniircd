@@ -22,7 +22,7 @@ Features
   without sending NACK can connect without long timeouts).
 * Reasonably secure when used with --chroot and --setuid.
 * register/identify accounts
-* opers can kick and ban
+* opers can kick, ban, quiet and filter messages
 * Includes a primitive bouncer
 
 
