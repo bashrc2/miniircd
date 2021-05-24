@@ -1348,6 +1348,7 @@ class Client:
                 return
             else:
                 self.__flood_time = 0
+                self.__flood_score = 0
 
         if self.__quiet or self.server.message_filtered(message):
             return
