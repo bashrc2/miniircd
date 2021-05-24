@@ -1506,49 +1506,9 @@ class Server:
         if self.state_dir:
             create_directory(self.state_dir)
 
-        # load the banned nicknames list
-        if os.path.isfile(self.banned_filename):
-            try:
-                with open(self.banned_filename, 'r') as ban_file:
-                    bannedListStr = ban_file.read()
-                    bannedList = bannedListStr.split('\n')
-                    for nick in bannedList:
-                        if not nick:
-                            continue
-                        nick = nick.encode()
-                        if nick not in self.banned_nicknames:
-                            self.banned_nicknames.append(nick)
-            except BaseException:
-                pass
-
-        # load filters
-        if os.path.isfile(self.filters_filename):
-            try:
-                with open(self.filters_filename, 'r') as filters_file:
-                    filtersListStr = filters_file.read()
-                    filtersList = filtersListStr.split('\n')
-                    for filterStr in filtersList:
-                        if not filterStr:
-                            continue
-                        if filterStr not in self.filters:
-                            self.filters.append(filterStr)
-            except BaseException:
-                pass
-
-        # load dropped channels
-        if os.path.isfile(self.dropped_channels_filename):
-            try:
-                with open(self.dropped_channels_filename, 'r') as channels_file:
-                    channelsListStr = channels_file.read()
-                    channelsList = channelsListStr.split('\n')
-                    for channelStr in channelsList:
-                        if not channelStr:
-                            continue
-                        channelStr = channelStr.encode()
-                        if channelStr not in self.dropped_channels:
-                            self.dropped_channels.append(channelStr)
-            except BaseException:
-                pass
+        self._loadList(self.banned_nicknames, self.banned_filename, True)
+        self._loadList(self.filters, self.filters_filename, False)
+        self._loadList(self.dropped_channels, self.dropped_channels_filename, True)
 
     def remove_imposters(self, genuine, true_nickname: bytes) -> None:
         curr_nickname = genuine.nickname
@@ -1615,6 +1575,23 @@ class Server:
         if self.message_filtered(channelname):
             return True
         return False
+
+    def _loadList(self, lst: [], filename: str, encodeEntries: bool) -> None:
+        if not os.path.isfile(self.filename):
+            return
+        try:
+            with open(self.filename, 'r') as f:
+                listStr = f.read()
+                loadedList = listStr.split('\n')
+                for entryStr in loadedList:
+                    if not entryStr:
+                        continue
+                    if encodeEntries:
+                        entryStr = entryStr.encode()
+                    if entryStr not in lst:
+                        lst.append(channelStr)
+        except BaseException:
+            pass
 
     def _updateList(self, lst: [], filename: str, decode: bool) -> None:
         if self.write_lock:
