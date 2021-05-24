@@ -341,7 +341,7 @@ class Client:
         else:
             keys = []
         for i, channelname in enumerate(channelnames):
-            if not server.nickname_is_banned(channelname):
+            if server.nickname_is_banned(channelname):
                 self.reply(
                     b"405 %s %s :Too many channels"
                     % (self.nickname, channelname)
