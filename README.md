@@ -184,7 +184,7 @@ So if you encounter a spam flood then you can allow only registered users on cha
 
 If the spammer created a spam channel full of spam then you can remove it with:
 
-    /drop #spamchannel
+    /dropchannel #spamchannel
 
 
 License

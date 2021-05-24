@@ -823,7 +823,7 @@ class Client:
 
         def drop_handler() -> None:
             if len(arguments) < 1:
-                self.reply_461(b"DROP")
+                self.reply_461(b"DROPCHANNEL")
                 return
             if not self.is_operator:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
@@ -1225,7 +1225,7 @@ class Client:
         handler_table = {
             b"AWAY": away_handler,
             b"BANS": bans_handler,
-            b"DROP": drop_handler,
+            b"DROPCHANNEL": drop_handler,
             b"FILTER": filter_handler,
             b"FILTERS": filters_handler,
             b"IDENTIFY": identify_handler,
