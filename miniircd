@@ -1577,10 +1577,10 @@ class Server:
         return False
 
     def _loadList(self, lst: [], filename: str, encodeEntries: bool) -> None:
-        if not os.path.isfile(self.filename):
+        if not os.path.isfile(filename):
             return
         try:
-            with open(self.filename, 'r') as f:
+            with open(filename, 'r') as f:
                 listStr = f.read()
                 loadedList = listStr.split('\n')
                 for entryStr in loadedList:
