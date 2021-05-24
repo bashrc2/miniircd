@@ -178,15 +178,20 @@ class Client:
 
     @oper.setter
     def oper(self, value: bool) -> None:
+        if self.server.write_lock:
+            return
+        self.server.write_lock = True
         lines = []
         try:
             with open(self.server.passwords_filename, 'r') as fp:
                 fileStr = fp.read()
                 lines = fileStr.split('\n')
         except BaseException:
+            self.server.write_lock = False
             return
 
         if not lines:
+            self.server.write_lock = False
             return
 
         changed = False
@@ -213,8 +218,10 @@ class Client:
                 with open(self.server.passwords_filename, 'w+') as fp:
                     fp.write(fileStr)
             except BaseException:
+                self.server.write_lock = False
                 return
         self.is_operator = value
+        self.server.write_lock = False
 
     @property
     def quiet(self) -> bool:
@@ -412,10 +419,10 @@ class Client:
     def __register(self, nickname: str, salt: str, hashed_password: str, oper=False) -> bool:
         if nickname.endswith('_'):
             return False
-        if self.server.write_lock:
-            return False
         if not os.path.isfile(self.server.passwords_filename):
             oper = True
+        if self.server.write_lock:
+            return False
         self.server.write_lock = True
         line = nickname + ' ' + salt + ' ' + hashed_password
         if oper:
@@ -427,6 +434,7 @@ class Client:
             with open(self.server.passwords_filename, writeMode) as fp:
                 fp.write(line + '\n')
         except BaseException:
+            self.server.write_lock = False
             return False
         self.server.write_lock = False
         return True
@@ -905,12 +913,17 @@ class Client:
             except BaseException:
                 pass
             if new_password_file:
+                if self.server.write_lock:
+                    return
+                self.server.write_lock = True
                 try:
                     with open(self.server.passwords_filename, 'w+') as fp:
                         fp.write(new_password_file)
                 except BaseException:
+                    self.server.write_lock = False
                     self.message((f"Failed to change password").encode())
                     return
+                self.server.write_lock = False
             self.message((f"Changed password").encode())
 
         def identify_handler() -> None:
@@ -1431,11 +1444,15 @@ class Server:
                 listStr += s.decode('utf-8') + '\n'
             else:
                 listStr += s + b'\n'
+        if self.write_lock:
+            return
+        self.write_lock = True
         try:
             with open(filename, 'w+') as f:
                 f.write(listStr)
         except BaseException:
             pass
+        self.write_lock = False
 
     def ban(self, nickname: bytes) -> None:
         if nickname in self.banned_nicknames:
