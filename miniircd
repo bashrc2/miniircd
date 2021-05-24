@@ -341,7 +341,7 @@ class Client:
         else:
             keys = []
         for i, channelname in enumerate(channelnames):
-            if server.nickname_is_banned(channelname):
+            if server.channel_is_banned(channelname):
                 self.reply(
                     b"405 %s %s :Too many channels"
                     % (self.nickname, channelname)
@@ -841,7 +841,7 @@ class Client:
                 return
             for client in self.server.clients.values():
                 self.server.remove_member_from_channel(client, channelname)
-            self.server.remove_channel(channelname)
+            self.server.drop_channel(channelname)
             self.reply(b"403 %s Channel dropped %s" % (self.nickname, channelname))
 
         def nick_handler() -> None:
@@ -1408,11 +1408,13 @@ class Server:
         self.max_channels = args.max_channels
         self.passwords_filename = os.path.join(args.state_dir, 'passwords')
         self.banned_filename = os.path.join(args.state_dir, 'banned')
+        self.dropped_channels_filename = os.path.join(args.state_dir, 'dropped')
         self.filters_filename = os.path.join(args.state_dir, 'filters')
         self.registered_only = False
         self.new_registrations = args.new_registrations
         self.write_lock = False
         self.banned_nicknames = []
+        self.dropped_channels = []
         self.filters = []
         self.bouncer = []
         self.bouncer_size = 512
@@ -1481,6 +1483,20 @@ class Server:
             except BaseException:
                 pass
 
+        # load dropped channels
+        if os.path.isfile(self.dropped_channels_filename):
+            try:
+                with open(self.dropped_channels_filename, 'r') as channels_file:
+                    channelsListStr = channels_file.read()
+                    channelsList = channelsListStr.split('\n')
+                    for channelStr in channelsList:
+                        if not channelStr:
+                            continue
+                        if channelStr not in self.dropped_channels:
+                            self.dropped_channels.append(channelStr)
+            except BaseException:
+                pass
+
     def remove_imposters(self, genuine, true_nickname: bytes) -> None:
         curr_nickname = genuine.nickname
         if curr_nickname == true_nickname:
@@ -1532,6 +1548,19 @@ class Server:
             return True
         return False
 
+    def channel_is_banned(self, channelname: bytes) -> bool:
+        if channelname in self.dropped_channels:
+            return True
+        channelnameStr = channelname.decode('utf-8')
+        for nick in self.banned_nicknames:
+            if b'*' in nick or b'?' in nick:
+                search_pattern = nick.decode('utf-8')
+                if re.search(search_pattern, channelnameStr):
+                    return True
+        if self.message_filtered(channelname):
+            return True
+        return False
+
     def _updateList(self, lst: [], filename: str, decode: bool) -> None:
         if self.write_lock:
             return
@@ -1550,6 +1579,12 @@ class Server:
         except BaseException:
             pass
         self.write_lock = False
+
+    def drop_channel(self, channelname: bytes) -> None:
+        if channelname not in self.dropped_channels:
+            self.dropped_channels.append(channelname)
+            self._updateList(self.dropped_channels, self.dropped_channels_filename, True)
+        self.remove_channel(channelname)
 
     def ban(self, nickname: bytes) -> None:
         if nickname in self.banned_nicknames:
