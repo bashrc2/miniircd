@@ -981,6 +981,7 @@ class Client:
                 self.is_registered = False
                 return
             if len(arguments) == 2:
+                self.message((f"Full credentials provided").encode())
                 nickname = arguments[0].decode('utf-8')
                 password = arguments[1].decode('utf-8')
             else:
@@ -1464,6 +1465,7 @@ class Server:
         if imposter:
             genuine = self.get_client(curr_nickname)
             if genuine:
+                genuine.message((f"Removing imposter").encode())
                 self.remove_client(imposter, b'imposter')
                 genuine.nickname = true_nickname
                 self.client_changed_nickname(genuine, curr_nickname)
