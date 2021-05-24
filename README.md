@@ -168,9 +168,9 @@ To assign other operators who can help with moderation:
 
     /mode +o #channel [nickname]
 	
-To only allow registered users onto channels:
+To only allow registered users:
 
-    /mode +M
+    /mode +M #channel
 
 
 License
