@@ -172,6 +172,10 @@ To only allow registered users:
 
     /mode +M #channel
 
+To set the allowed number of new registrations:
+
+    /newreg [number]
+
 
 License
 -------
