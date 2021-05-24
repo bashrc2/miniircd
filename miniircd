@@ -1947,7 +1947,7 @@ def main() -> None:
     )
     ap.add_argument(
         "--max-flood-score",
-        default=4,
+        default=6,
         type=int,
         help="Maximum score for flood detection",
     )
