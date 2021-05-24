@@ -1457,7 +1457,7 @@ class Server:
             except BaseException:
                 pass
 
-    def remove_imposters(curr_nickname: str, true_nickname: str) -> None:
+    def remove_imposters(self, curr_nickname: str, true_nickname: str) -> None:
         if curr_nickname == true_nickname:
             return
         imposter = self.get_client(true_nickname)
