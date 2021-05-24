@@ -1222,7 +1222,7 @@ class Client:
                 self.reply(
                     b"401 %s %s :No such nick" % (self.nickname, username)
                 )
-        print('command: ' + command.decode('utf-8'))
+
         handler_table = {
             b"AWAY": away_handler,
             b"BANS": bans_handler,
