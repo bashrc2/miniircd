@@ -920,7 +920,7 @@ class Client:
             new_registrations = arguments[0].decode('utf-8')
             if new_registrations.isdigit():
                 self.server.new_registrations = int(new_registrations)
-                self.message(b"New registrations: %s" % new_registrations)
+                self.message(b"New registrations: %s" % new_registrations.encode())
 
         def setpassword_handler() -> None:
             if self.server.write_lock:
