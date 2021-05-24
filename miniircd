@@ -618,6 +618,10 @@ class Client:
                     )
                     return
                 flag = arguments[1]
+                if flag == b"+a":
+                    flag = b"+o"
+                elif flag == b"-a":
+                    flag = b"-o"
                 if flag == b"+k":
                     if len(arguments) < 3:
                         self.reply_461(b"MODE")
