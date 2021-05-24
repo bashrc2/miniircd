@@ -1347,6 +1347,7 @@ class Client:
                 # reject messages for a while if flooding was detected
                 return
             else:
+                print('Flood timeout ended for ' + self.nickname.decode('utf-8'))
                 self.__flood_time = 0
                 self.__flood_score = 0
 
@@ -1366,6 +1367,7 @@ class Client:
                 self.__flood_score += 2
             if self.__flood_score >= self.server.max_flood_score:
                 self.__flood_time = curr_time
+                print('Flood detected from ' + self.nickname.decode('utf-8'))
                 return
         else:
             self.__flood_score = 0
@@ -1948,7 +1950,7 @@ def main() -> None:
     )
     ap.add_argument(
         "--max-flood-score",
-        default=6,
+        default=10,
         type=int,
         help="Maximum score for flood detection",
     )
