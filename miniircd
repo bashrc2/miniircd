@@ -119,14 +119,15 @@ class Channel:
     def _write_state(self) -> None:
         if not self._state_path:
             return
-        if not self.server.write_lock:
-            self.server.write_lock = True
-            try:
-                with open(self._state_path, "w+") as state_file:
-                    state_file.write("topic = %r\n" % self.topic)
-                    state_file.write("key = %r\n" % self.key)
-            except BaseException:
-                pass
+        if self.server.write_lock:
+            return
+        self.server.write_lock = True
+        try:
+            with open(self._state_path, "w+") as state_file:
+                state_file.write("topic = %r\n" % self.topic)
+                state_file.write("key = %r\n" % self.key)
+        except BaseException:
+            pass
         self.server.write_lock = False
 
 
@@ -417,13 +418,13 @@ class Client:
         return pwdhash.decode('ascii')
 
     def __register(self, nickname: str, salt: str, hashed_password: str, oper=False) -> bool:
-        if nickname.endswith('_'):
-            return False
-        if not os.path.isfile(self.server.passwords_filename):
-            oper = True
         if self.server.write_lock:
             return False
+        if nickname.endswith('_'):
+            return False
         self.server.write_lock = True
+        if not os.path.isfile(self.server.passwords_filename):
+            oper = True
         line = nickname + ' ' + salt + ' ' + hashed_password
         if oper:
             line += ' oper'
@@ -879,13 +880,18 @@ class Client:
                 self.message((f"Register failed").encode())
 
         def setpassword_handler() -> None:
+            if self.server.write_lock:
+                return
+            self.server.write_lock = True
             if len(arguments) < 1:
                 self.reply_461(b"SETPASSWORD")
+                self.server.write_lock = False
                 return
             if not self.is_operator:
                 if not self.is_registered:
                     self.reply(b"406 %s :Not registered" % self.nickname)
                     self.message((f"Not registered").encode())
+                    self.server.write_lock = False
                     return
             password = arguments[0].decode('utf-8')
             nickStr = self.nickname.decode('utf-8')
@@ -893,6 +899,7 @@ class Client:
             if not salt:
                 self.reply(b"406 %s :Not registered" % self.nickname)
                 self.message((f"Not registered").encode())
+                self.server.write_lock = False
                 return False
             hashed_password = self.__hash_password(salt, password)
             new_password_file = None
@@ -913,18 +920,15 @@ class Client:
             except BaseException:
                 pass
             if new_password_file:
-                if self.server.write_lock:
-                    return
-                self.server.write_lock = True
                 try:
                     with open(self.server.passwords_filename, 'w+') as fp:
                         fp.write(new_password_file)
                 except BaseException:
-                    self.server.write_lock = False
                     self.message((f"Failed to change password").encode())
+                    self.server.write_lock = False
                     return
-                self.server.write_lock = False
             self.message((f"Changed password").encode())
+            self.server.write_lock = False
 
         def identify_handler() -> None:
             if len(arguments) < 1:
@@ -1436,6 +1440,9 @@ class Server:
         return False
 
     def _updateList(self, lst: [], filename: str, decode: bool) -> None:
+        if self.write_lock:
+            return
+        self.write_lock = True
         listStr = ''
         if not decode:
             listStr = b''
@@ -1444,9 +1451,6 @@ class Server:
                 listStr += s.decode('utf-8') + '\n'
             else:
                 listStr += s + b'\n'
-        if self.write_lock:
-            return
-        self.write_lock = True
         try:
             with open(filename, 'w+') as f:
                 f.write(listStr)
