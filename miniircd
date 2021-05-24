@@ -341,11 +341,7 @@ class Client:
         else:
             keys = []
         for i, channelname in enumerate(channelnames):
-            if server.channel_is_banned(channelname):
-                self.reply(
-                    b"405 %s %s :Too many channels"
-                    % (self.nickname, channelname)
-                )
+            if server.channel_is_banned(irc_lower(channelname)):
                 continue
             if for_join and irc_lower(channelname) in self.channels:
                 continue
@@ -837,8 +833,8 @@ class Client:
             if not self.is_operator:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 return
-            channelname = arguments[0]
-            channel = self.server.get_channel(irc_lower(channelname))
+            channelname = irc_lower(arguments[0])
+            channel = self.server.get_channel(channelname)
             if not channel:
                 self.reply(b"403 %s Channel not found %s" % (self.nickname, channelname))
                 return
