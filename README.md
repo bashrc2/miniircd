@@ -151,9 +151,9 @@ Commandline administration
 
 If you want to create, delete or change the password on an account from the commandline:
 
-    python3 miniircd.py --state-dir=/ --add-account nickname:password
-    python3 miniircd.py --state-dir=/ --set-password nickname:newpassword
-    python3 miniircd.py --state-dir=/ --del-account nickname
+    python3 miniircd.py --state-dir=/var/jail/miniircd --add-account nickname:password
+    python3 miniircd.py --state-dir=/var/jail/miniircd --set-password nickname:newpassword
+    python3 miniircd.py --state-dir=/var/jail/miniircd --del-account nickname
 
 
 Basic moderation
