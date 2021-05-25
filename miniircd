@@ -1486,7 +1486,7 @@ class Server:
         self.banned_filename = os.path.join(args.state_dir, 'banned')
         self.dropped_channels_filename = os.path.join(args.state_dir, 'dropped')
         self.filters_filename = os.path.join(args.state_dir, 'filters')
-        self.registered_only = False
+        self.registered_only = args.registered_only
         self.new_registrations = args.new_registrations
         self.max_flood_score = args.max_flood_score
         self.write_lock = False
@@ -2088,7 +2088,12 @@ def main() -> None:
     ap.add_argument(
         "--verbose",
         action="store_true",
-        help="be verbose (print some progress messages to stdout)",
+        help="Be verbose (print some progress messages to stdout)",
+    )
+    ap.add_argument(
+        "--registered-only",
+        action="store_false",
+        help="Only allow registered users within channels",
     )
     ap.add_argument(
         "--cloak", metavar="X", help="report X as the host for all clients"
