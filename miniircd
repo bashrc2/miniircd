@@ -2092,7 +2092,7 @@ def main() -> None:
     )
     ap.add_argument(
         "--registered-only",
-        action="store_false",
+        action="store_true",
         help="Only allow registered users within channels",
     )
     ap.add_argument(
