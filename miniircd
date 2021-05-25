@@ -1092,6 +1092,9 @@ class Client:
             if len(arguments) == 1:
                 self.reply(b"412 %s :No text to send" % self.nickname)
                 return
+            if not self.is_registered:
+                self.reply(b"481 %s :Only registered users can send private messages" % (self.nickname))
+                return
             targetname = arguments[0]
             message = arguments[1]
             client = self.server.get_client(targetname)
