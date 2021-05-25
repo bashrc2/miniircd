@@ -1073,9 +1073,6 @@ class Client:
             if len(arguments) == 1:
                 self.reply(b"412 %s :No text to send" % self.nickname)
                 return
-            if not self.is_registered:
-                self.reply(b"481 %s :Only registered users can send private messages" % (self.nickname))
-                return
             if self.__quiet:
                 self.reply(b"481 %s :You are muted" % (self.nickname))
                 return
@@ -1087,6 +1084,9 @@ class Client:
                 message += arguments[index]
             client = self.server.get_client(targetname)
             if client:
+                if not self.is_registered:
+                    self.reply(b"481 %s :Only registered users can send private messages" % (self.nickname))
+                    return                
                 client.message(
                     b":%s %s %s :%s"
                     % (self.prefix, command, targetname, message)
