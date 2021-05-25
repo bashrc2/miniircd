@@ -157,7 +157,7 @@ A kicked user can rejoin a channel though, so if you need to ban:
 
     /mode +b #channel [nickname]
 
-And you can remove a ban with:
+And you can also remove a ban. Note that the unbanned user will need to re-register their account.
 
     /mode -b #channel [nickname]
 	
