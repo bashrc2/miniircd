@@ -181,7 +181,7 @@ class Client:
     def oper(self) -> bool:
         return self.is_operator
 
-    @oper.setter
+    @bouncer_replay_active.setter
     def bouncer_replay_active(self, value: bool) -> None:
         self.__bouncer_replay_active = value
 
@@ -561,7 +561,7 @@ class Client:
                     new_line = line
                     if line.startswith(nickname + ' ' + salt + ' '):
                         new_line = nickname + ' ' + salt + ' ' + hashed_password
-                        if self.is_operator:
+                        if self.oper:
                             new_line += ' oper'
                         new_line += '\n'
                     new_password_file += new_line
@@ -598,7 +598,7 @@ class Client:
                 self.reply_461(b"JOIN")
                 return
             if arguments[0] == b"0":
-                if not self.is_operator:
+                if not self.oper:
                     self.reply(b"481 %s :Permission denied" % (self.nickname))
                     return
                 for (channelname, channel) in self.channels.items():
@@ -633,7 +633,7 @@ class Client:
             self.reply(b"323 %s :End of LIST" % self.nickname)
 
         def filters_handler() -> None:
-            if not self.is_operator:
+            if not self.oper:
                 self.reply(b"481 %s :Filters list permission denied" % (self.nickname))
                 return
             self.server.filters.sort()
@@ -644,7 +644,7 @@ class Client:
             self.reply(b"349 %s :End of FILTERS" % self.nickname)
 
         def bans_handler() -> None:
-            if not self.is_operator:
+            if not self.oper:
                 self.reply(b"481 %s :Bans list permission denied" % (self.nickname))
                 return
             self.server.banned_nicknames.sort()
@@ -655,7 +655,7 @@ class Client:
             self.reply(b"368 %s :End of BANS" % self.nickname)
 
         def chanbans_handler() -> None:
-            if not self.is_operator:
+            if not self.oper:
                 self.reply(b"481 %s :Chanbans list permission denied" % (self.nickname))
                 return
             self.server.dropped_channels.sort()
@@ -674,7 +674,7 @@ class Client:
                 return
             targetname = arguments[0]
             if self.server.has_channel(targetname):
-                if not self.is_operator:
+                if not self.oper:
                     self.reply(b"481 %s :Mode change permission denied" % (self.nickname))
                     return
                 channel = self.server.get_channel(targetname)
@@ -778,7 +778,7 @@ class Client:
                         )
                         client = server.get_client(quiet_nick)
                         if client:
-                            if not client.is_operator:
+                            if not client.oper:
                                 client.quiet = True
                                 self.channel_log(
                                     channel, b"Quiet %s" % quiet_nick, meta=True
@@ -887,7 +887,7 @@ class Client:
             if len(arguments) < 1:
                 self.reply_461(b"DROP")
                 return
-            if not self.is_operator:
+            if not self.oper:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 return
             channelname = irc_lower(arguments[0])
@@ -935,7 +935,7 @@ class Client:
                 )
 
         def kick_handler() -> None:
-            if not self.is_operator:
+            if not self.oper:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 return
             if len(arguments) < 2:
@@ -996,7 +996,7 @@ class Client:
             if len(arguments) < 1:
                 self.reply_461(b"NEWREG")
                 return
-            if not self.is_operator:
+            if not self.oper:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 return
             new_registrations = arguments[0].decode('utf-8')
@@ -1012,7 +1012,7 @@ class Client:
                 self.reply_461(b"SETPASSWORD")
                 self.server.write_lock = False
                 return
-            if not self.is_operator:
+            if not self.oper:
                 if not self.is_registered:
                     self.reply(b"406 %s :Not registered" % self.nickname)
                     self.message((f"Not registered").encode())
@@ -1042,7 +1042,7 @@ class Client:
             if len(arguments) < 2:
                 self.reply_461(b"FILTER")
                 return
-            if not self.is_operator:
+            if not self.oper:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 self.message((f"Only operators can add filter patterns").encode())
                 return
@@ -1159,7 +1159,7 @@ class Client:
                 if channel.topic:
                     topic_exists = True
 
-            if topic_exists and not self.is_operator:
+            if topic_exists and not self.oper:
                 self.reply(
                     b"482 %s :Don't have permission to change topic"
                     % (self.nickname)
@@ -1196,7 +1196,7 @@ class Client:
             if len(arguments) < 1:
                 self.reply_461(b"WALLOPS")
                 return
-            if not self.is_operator:
+            if not self.oper:
                 self.reply(b"481 %s :Permission denied" % (self.nickname))
                 return
             message = arguments[0]
@@ -1689,7 +1689,7 @@ class Server:
         if '*' not in nickStr and '?' not in nickStr:
             client = self.get_client(nickname)
             if client:
-                if client.is_operator:
+                if client.oper:
                     return False
             elif self.account_is_operator(nickname):
                 return False
@@ -1707,7 +1707,7 @@ class Server:
         for nickname in banList:
             client = self.get_client(nickname)
             if client:
-                if not client.is_operator:
+                if not client.oper:
                     self.remove_client(client, b'banned')
             self.delete_account(nickname.decode('utf-8'))
         self._updateList(self.banned_nicknames, self.banned_filename, True)
