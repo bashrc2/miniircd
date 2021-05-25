@@ -579,33 +579,6 @@ class Client:
         self.server.write_lock = False
         return True
 
-    def delete_account(self, nickname: str) -> bool:
-        new_password_file = None
-        try:
-            with open(self.server.passwords_filename, 'r') as fp:
-                lines = fp.readlines()
-                new_password_file = ''
-                for line in lines:
-                    if not line.endswith('\n'):
-                        line += '\n'
-                    new_line = line
-                    if line.startswith(nickname + ' '):
-                        continue
-                    new_password_file += new_line
-        except BaseException:
-            pass
-        if not new_password_file:
-            self.server.write_lock = False
-            return False
-        try:
-            with open(self.server.passwords_filename, 'w+') as fp:
-                fp.write(new_password_file)
-        except BaseException:
-            self.server.write_lock = False
-            return False
-        self.server.write_lock = False
-        return True
-
     def __command_handler(
         self, command: bytes, arguments: Sequence[bytes]
     ) -> None:
@@ -1585,6 +1558,33 @@ class Server:
             pass
         self.write_lock = False
 
+    def delete_account(self, nickname: str) -> bool:
+        new_password_file = None
+        try:
+            with open(self.passwords_filename, 'r') as fp:
+                lines = fp.readlines()
+                new_password_file = ''
+                for line in lines:
+                    if not line.endswith('\n'):
+                        line += '\n'
+                    new_line = line
+                    if line.startswith(nickname + ' '):
+                        continue
+                    new_password_file += new_line
+        except BaseException:
+            pass
+        if not new_password_file:
+            self.write_lock = False
+            return False
+        try:
+            with open(self.passwords_filename, 'w+') as fp:
+                fp.write(new_password_file)
+        except BaseException:
+            self.write_lock = False
+            return False
+        self.write_lock = False
+        return True
+
     def remove_imposters(self, genuine, true_nickname: bytes) -> None:
         curr_nickname = genuine.nickname
         if curr_nickname == true_nickname:
@@ -1657,9 +1657,10 @@ class Server:
             self._updateList(self.dropped_channels, self.dropped_channels_filename, True)
         self.remove_channel(channelname)
 
-    def ban(self, nickname: bytes) -> None:
+    def ban(self, nickname: bytes) -> bool:
         if nickname in self.banned_nicknames:
-            return
+            return True
+        # TODO is this an operator nickname?
         self.banned_nicknames.append(nickname)
 
         nickStr = nickname.decode('utf-8')
@@ -1676,9 +1677,11 @@ class Server:
         for nickname in banList:
             client = self.get_client(nickname)
             if client:
-                self.remove_client(client, b'banned')
-            client.delete_account(nickname.decode('utf-8'))
+                if not client.is_operator:
+                    self.remove_client(client, b'banned')
+            self.delete_account(nickname.decode('utf-8'))
         self._updateList(self.banned_nicknames, self.banned_filename, True)
+        return True
 
     def unban(self, nickname: bytes) -> None:
         if nickname in self.banned_nicknames:
