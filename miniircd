@@ -1670,7 +1670,7 @@ class Server:
             client = self.get_client(nickname)
             if client:
                 self.remove_client(client, b'banned')
-                client.delete_account(nickname.decode('utf-8'))
+            client.delete_account(nickname.decode('utf-8'))
         self._updateList(self.banned_nicknames, self.banned_filename, True)
 
     def unban(self, nickname: bytes) -> None:
