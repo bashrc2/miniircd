@@ -805,10 +805,11 @@ class Client:
                         )
                         client = server.get_client(quiet_nick)
                         if client:
-                            client.quiet = True
-                        self.channel_log(
-                            channel, b"Quiet %s" % quiet_nick, meta=True
-                        )
+                            if not client.is_operator:
+                                client.quiet = True
+                                self.channel_log(
+                                    channel, b"Quiet %s" % quiet_nick, meta=True
+                                )
                 elif flag == b"-q":
                     if len(arguments) < 4:
                         self.reply_461(b"MODE")
@@ -1094,6 +1095,9 @@ class Client:
                 return
             if not self.is_registered:
                 self.reply(b"481 %s :Only registered users can send private messages" % (self.nickname))
+                return
+            if self.__quiet:
+                self.reply(b"481 %s :You are muted" % (self.nickname))
                 return
             targetname = arguments[0]
             message = arguments[1]
