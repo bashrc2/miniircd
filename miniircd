@@ -924,6 +924,9 @@ class Client:
                     )
                 oldnickname = self.nickname
                 self.nickname = newnick
+                self.is_operator = False
+                self.is_registered = False
+                self.quiet = False
                 self.server.client_changed_nickname(self, oldnickname)
                 self.message_related(
                     b":%s!%s@%s NICK %s"
