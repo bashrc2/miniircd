@@ -146,6 +146,16 @@ To subsequently change password:
     /setpassword [newpassword]
 
 
+Commandline administration
+--------------------------
+
+If you want to create, delete or change the password on an account from the commandline:
+
+    python3 miniircd.py --add-account nickname:password
+    python3 miniircd.py --set-password nickname:newpassword
+    python3 miniircd.py --del-account nickname
+
+
 Basic moderation
 ----------------
 
