@@ -498,7 +498,7 @@ class Client:
             return 1
         return 0
 
-    def __msg_nickserv_register(self, password: str) -> bool:
+    def register_account(self, password: str) -> bool:
         if self.server.new_registrations <= 0:
             self.reply(b"406 %s :New registrations closed" % (self.nickname))
             return False
@@ -540,6 +540,70 @@ class Client:
             self.reply(b"401 %s :No such nick" % self.nickname)
             return False
         self.server.remove_imposters(self, nickname.encode())
+        return True
+
+    def set_password(self, nickname: str, password: str) -> bool:
+        salt = self.__get_salt(nickname)
+        if not salt:
+            self.reply(b"406 %s :Not registered" % self.nickname)
+            self.message((f"Not registered").encode())
+            self.server.write_lock = False
+            return False
+        hashed_password = self.__hash_password(salt, password)
+        new_password_file = None
+        try:
+            with open(self.server.passwords_filename, 'r') as fp:
+                lines = fp.readlines()
+                new_password_file = ''
+                for line in lines:
+                    if not line.endswith('\n'):
+                        line += '\n'
+                    new_line = line
+                    if line.startswith(nickname + ' ' + salt + ' '):
+                        new_line = nickname + ' ' + salt + ' ' + hashed_password
+                        if self.is_operator:
+                            new_line += ' oper'
+                        new_line += '\n'
+                    new_password_file += new_line
+        except BaseException:
+            pass
+        if new_password_file:
+            try:
+                with open(self.server.passwords_filename, 'w+') as fp:
+                    fp.write(new_password_file)
+            except BaseException:
+                self.message((f"Failed to change password").encode())
+                self.server.write_lock = False
+                return False
+        self.message((f"Changed password").encode())
+        self.server.write_lock = False
+        return True
+
+    def delete_account(self, nickname: str) -> bool:
+        new_password_file = None
+        try:
+            with open(self.server.passwords_filename, 'r') as fp:
+                lines = fp.readlines()
+                new_password_file = ''
+                for line in lines:
+                    if not line.endswith('\n'):
+                        line += '\n'
+                    new_line = line
+                    if line.startswith(nickname + ' '):
+                        continue
+                    new_password_file += new_line
+        except BaseException:
+            pass
+        if not new_password_file:
+            self.server.write_lock = False
+            return False
+        try:
+            with open(self.server.passwords_filename, 'w+') as fp:
+                fp.write(new_password_file)
+        except BaseException:
+            self.server.write_lock = False
+            return False
+        self.server.write_lock = False
         return True
 
     def __command_handler(
@@ -946,7 +1010,7 @@ class Client:
                 self.reply_461(b"REGISTER")
                 return
             password = arguments[0].decode('utf-8')
-            if self.__msg_nickserv_register(password):
+            if self.register_account(password):
                 self.message((f"Register success").encode())
             else:
                 self.message((f"Register failed").encode())
@@ -977,42 +1041,7 @@ class Client:
                     self.message((f"Not registered").encode())
                     self.server.write_lock = False
                     return
-            password = arguments[0].decode('utf-8')
-            nickStr = self.nickname.decode('utf-8')
-            salt = self.__get_salt(nickStr)
-            if not salt:
-                self.reply(b"406 %s :Not registered" % self.nickname)
-                self.message((f"Not registered").encode())
-                self.server.write_lock = False
-                return False
-            hashed_password = self.__hash_password(salt, password)
-            new_password_file = None
-            try:
-                with open(self.server.passwords_filename, 'r') as fp:
-                    lines = fp.readlines()
-                    new_password_file = ''
-                    for line in lines:
-                        if not line.endswith('\n'):
-                            line += '\n'
-                        new_line = line
-                        if line.startswith(nickStr + ' ' + salt + ' '):
-                            new_line = nickStr + ' ' + salt + ' ' + hashed_password
-                            if self.is_operator:
-                                new_line += ' oper'
-                            new_line += '\n'
-                        new_password_file += new_line
-            except BaseException:
-                pass
-            if new_password_file:
-                try:
-                    with open(self.server.passwords_filename, 'w+') as fp:
-                        fp.write(new_password_file)
-                except BaseException:
-                    self.message((f"Failed to change password").encode())
-                    self.server.write_lock = False
-                    return
-            self.message((f"Changed password").encode())
-            self.server.write_lock = False
+            self.set_password(self.nickname.decode('utf-8'), arguments[0].decode('utf-8'))
 
         def identify_handler() -> None:
             if len(arguments) < 1:
