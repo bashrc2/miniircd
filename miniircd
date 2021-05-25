@@ -929,7 +929,7 @@ class Client:
                 oldnickname = self.nickname
                 self.nickname = newnick
                 if self.is_registered:
-                    self.reply(b"Unregistered")
+                    self.message(b"Unregistered")
                 self.is_operator = False
                 self.is_registered = False
                 self.quiet = False
