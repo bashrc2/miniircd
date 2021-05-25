@@ -1073,7 +1073,11 @@ class Client:
                 self.reply(b"481 %s :You are muted" % (self.nickname))
                 return
             targetname = arguments[0]
-            message = arguments[1]
+            message = b''
+            for index in range(1, len(arguments)):
+                if index > 1:
+                    message += b' '
+                message += arguments[index]
             client = self.server.get_client(targetname)
             if client:
                 client.message(
