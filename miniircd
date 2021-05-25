@@ -2068,6 +2068,11 @@ def main() -> None:
         help="Deletes an account with the given nickname",
     )
     ap.add_argument(
+        "--set-password",
+        metavar="X",
+        help="Set password with nickname:newpassword",
+    )
+    ap.add_argument(
         "--verbose",
         action="store_true",
         help="be verbose (print some progress messages to stdout)",
@@ -2127,6 +2132,38 @@ def main() -> None:
                             if not line.endswith('\n'):
                                 line += '\n'
                             new_passwords_file += line
+                with open(filename, "w+") as fp:
+                    fp.write(new_passwords_file)
+        sys.exit()
+
+    if args.set_password:
+        if ':' not in args.set_password:
+            args.error("Specify nickname:password")
+        fields = args.set_password.split(':')
+        nickname = fields[0]
+        password = fields[1].replace('\n', '')
+        filename = os.path.join(args.state_dir, 'passwords')
+        if os.path.isfile(filename):
+            if nickname + ' ' in open(filename).read():
+                new_passwords_file = ''
+                with open(filename, "r") as fp:
+                    lines = fp.readlines()
+                    new_passwords_file = ''
+                    for line in lines:
+                        if not line.endswith('\n'):
+                            line += '\n'
+                        if not line.startswith(nickname + ' '):
+                            new_passwords_file += line
+                        else:
+                            salt = line.split(' ')[1]
+                            pwdhash = hashlib.pbkdf2_hmac('sha512',
+                                                          password.encode('utf-8'),
+                                                          salt.encode('utf-8'), 100000)
+                            pwdhash = binascii.hexlify(pwdhash)
+                            new_line = nickname + ' ' + salt + ' ' + pwdhash
+                            if line.endswith(' oper\n'):
+                                new_line += ' oper'
+                            new_passwords_file += new_line + '\n'
                 with open(filename, "w+") as fp:
                     fp.write(new_passwords_file)
         sys.exit()
