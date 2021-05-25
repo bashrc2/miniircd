@@ -1086,7 +1086,7 @@ class Client:
             if client:
                 if not self.is_registered:
                     self.reply(b"481 %s :Only registered users can send private messages" % (self.nickname))
-                    return                
+                    return
                 client.message(
                     b":%s %s %s :%s"
                     % (self.prefix, command, targetname, message)
