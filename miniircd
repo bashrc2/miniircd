@@ -181,6 +181,10 @@ class Client:
     def oper(self) -> bool:
         return self.is_operator
 
+    @property
+    def bouncer_replay_active(self) -> bool:
+        return self.__bouncer_replay_active
+
     @bouncer_replay_active.setter
     def bouncer_replay_active(self, value: bool) -> None:
         self.__bouncer_replay_active = value
