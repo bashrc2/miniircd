@@ -7,8 +7,8 @@ Description
 -----------
 
 miniircd is a small and limited IRC server written in Python. Despite its size,
-it is a functional alternative to a full-blown ircd for private or internal
-use. Installation is simple; no configuration is required.
+it is a functional alternative to a full-blown ircd for general use.
+Installation is simple; no configuration is required.
 
 
 Features
@@ -144,6 +144,14 @@ A passwords file in the state directory contains password hashes. The word "oper
 To subsequently change password:
 
     /setpassword [newpassword]
+
+Irssi
+-----
+
+If you are using **irssi** as a client to connect to this server then it won't recognize the account registration commands. You will need to install [dispatch.pl](https://github.com/irssi/scripts.irssi.org/blob/master/scripts/dispatch.pl) into **~/.irssi**, then within the **chatnets** section of **~/.irssi/config** add:
+
+    nick = "yournickname";
+    autosendcmd = "/quote identify yournickname yourpassword;wait 2000";
 
 
 Commandline administration
