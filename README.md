@@ -30,9 +30,9 @@ Limitations
 -----------
 
 * Can't connect to other IRC servers.
-* Only knows the most basic IRC commands.
-* No channel operators.
-* No user or channel modes except channel key.
+* Only knows a basic subset of IRC commands.
+* Operators are global, not channel based. It's expected that you'll only be running a few channels.
+* Not all user and channel modes are implemented.
 * No reverse DNS lookup.
 
 
