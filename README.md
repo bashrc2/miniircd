@@ -21,8 +21,8 @@ Features
 * No ident lookup (so that people behind firewalls that filter the ident port
   without sending NACK can connect without long timeouts).
 * Reasonably secure when used with --chroot and --setuid.
-* register/identify accounts
-* opers can kick, ban, quiet and filter messages
+* Register/identify accounts
+* Operators can kick, ban, quiet and filter messages
 * Includes a primitive bouncer
 
 
@@ -31,7 +31,8 @@ Limitations
 
 * Can't connect to other IRC servers.
 * Only knows a basic subset of IRC commands.
-* Operators are global, not channel based. It's expected that you'll only be running a few channels.
+* Operators are global, not channel based.
+  It's expected that you'll only be running a few channels.
 * Not all user and channel modes are implemented.
 * No reverse DNS lookup.
 
@@ -133,13 +134,13 @@ To identify yourself connect with your previous nick, then:
 
     /identify [password]
 	
-The first account to be registered gets oper status. Note that this applies for all channels.
+The first account to be registered gets operator status. Note that this applies for all channels.
 
 If there is an imposter occupying your usual nickname then you can identify yourself with your full credentials, and the imposter will be removed.
 
     /identify [nickname] [password]
 
-A passwords file in the state directory contains password hashes. The word "oper" is appended to any accounts with oper status.
+A passwords file in the state directory contains password hashes. The word "oper" is appended to any accounts with operator status.
 
 To subsequently change password:
 
@@ -167,7 +168,7 @@ If you want to create, delete or change the password on an account from the comm
 Basic moderation
 ----------------
 
-To kick other users you must have oper status. Identify yourself with a password, as above, then to kick:
+To kick other users you must have operator status. Identify yourself with a password, as above, then to kick:
 
     /kick [nickname]
 
