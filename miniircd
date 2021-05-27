@@ -43,6 +43,18 @@ Socket = socket.socket
 VERSION = "2.2"
 
 
+def password_salt() -> str:
+    return hashlib.sha256(os.urandom(60)).hexdigest()
+
+
+def password_hash(salt: str, password: str) -> str:
+    pwdhash = hashlib.pbkdf2_hmac('sha512',
+                                  password.encode('utf-8'),
+                                  salt.encode('utf-8'), 100000)
+    pwdhash = binascii.hexlify(pwdhash)
+    return pwdhash.decode('ascii')
+
+
 def create_directory(path: str) -> None:
     if not os.path.isdir(path):
         os.makedirs(path)
@@ -431,13 +443,6 @@ class Client:
                 b"366 %s %s :End of NAMES list" % (self.nickname, channelname)
             )
 
-    def __hash_password(self, salt: str, password: str) -> str:
-        pwdhash = hashlib.pbkdf2_hmac('sha512',
-                                      password.encode('utf-8'),
-                                      salt.encode('utf-8'), 100000)
-        pwdhash = binascii.hexlify(pwdhash)
-        return pwdhash.decode('ascii')
-
     def __register(self, nickname: str, salt: str, hashed_password: str, oper=False) -> bool:
         if self.server.write_lock:
             return False
@@ -516,8 +521,8 @@ class Client:
         if salt:
             self.reply(b"462 %s :Already registered" % (self.nickname))
             return False
-        salt = hashlib.sha256(os.urandom(60)).hexdigest()
-        hashed_password = self.__hash_password(salt, password)
+        salt = password_salt()
+        hashed_password = password_hash(salt, password)
         if not self.__register(register_nick, salt, hashed_password):
             self.reply(b"424 %s :File error" % (self.nickname))
             self.server.write_lock = False
@@ -532,7 +537,7 @@ class Client:
             self.is_operator = False
             self.is_registered = False
             return False
-        hashed_password = self.__hash_password(salt, password)
+        hashed_password = password_hash(salt, password)
         retval = self.__identify(nickname, salt, hashed_password)
         if retval > 0:
             self.is_registered = True
@@ -553,7 +558,7 @@ class Client:
             self.message((f"Not registered").encode())
             self.server.write_lock = False
             return False
-        hashed_password = self.__hash_password(salt, password)
+        hashed_password = password_hash(salt, password)
         new_password_file = None
         try:
             with open(self.server.passwords_filename, 'r') as fp:
@@ -2120,11 +2125,8 @@ def main() -> None:
         fields = args.add_account.split(':')
         nickname = fields[0]
         password = fields[1].replace('\n', '')
-        salt = hashlib.sha256(os.urandom(60)).hexdigest()
-        pwdhash = hashlib.pbkdf2_hmac('sha512',
-                                      password.encode('utf-8'),
-                                      salt.encode('utf-8'), 100000)
-        pwdhash = binascii.hexlify(pwdhash).decode('utf-8')
+        salt = password_salt()
+        pwdhash = password_hash(salt, password)
         line = nickname + ' ' + salt + ' ' + pwdhash
         filename = os.path.join(args.state_dir, 'passwords')
         if os.path.isfile(filename):
@@ -2174,10 +2176,7 @@ def main() -> None:
                             new_passwords_file += line
                         else:
                             salt = line.split(' ')[1]
-                            pwdhash = hashlib.pbkdf2_hmac('sha512',
-                                                          password.encode('utf-8'),
-                                                          salt.encode('utf-8'), 100000)
-                            pwdhash = binascii.hexlify(pwdhash).decode('utf-8')
+                            pwdhash = password_hash(salt, password)
                             new_line = nickname + ' ' + salt + ' ' + pwdhash
                             if line.endswith(' oper\n'):
                                 new_line += ' oper'
