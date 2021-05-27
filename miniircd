@@ -1935,6 +1935,8 @@ class Server:
                 else:
                     if int(time.time()) - last_connection_attempt < 3:
                         continue
+                    if len(self.clients) >= self.max_clients:
+                        continue
                     last_connection_attempt = int(time.time())
                     conn, addr = x.accept()
                     if self.ssl_key_file:
