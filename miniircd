@@ -1936,7 +1936,17 @@ class Server:
                     if int(time.time()) - last_connection_attempt < 3:
                         continue
                     if len(self.clients) >= self.max_clients:
-                        continue
+                        # avoid connection blocking by trying to remove
+                        # an unregistered client
+                        removeclient = None
+                        for y in self.clients:
+                            if not y.is_registered:
+                                removeclient = y
+                                break
+                        if removeclient:
+                            self.remove_client(removeclient, b'bye')
+                        if len(self.clients) >= self.max_clients:
+                            continue
                     last_connection_attempt = int(time.time())
                     conn, addr = x.accept()
                     if self.ssl_key_file:
