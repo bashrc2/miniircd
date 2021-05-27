@@ -1917,6 +1917,7 @@ class Server:
 
     def run(self, serversockets: List[Socket]) -> None:
         last_aliveness_check = time.time()
+        last_connection_attempt = 0
         while True:
             iwtd, owtd, ewtd = select.select(
                 serversockets + [x.socket for x in self.clients.values()],
@@ -1932,6 +1933,9 @@ class Server:
                 if x in self.clients:
                     self.clients[x].socket_readable_notification()
                 else:
+                    if int(time.time()) - last_connection_attempt < 3:
+                        continue
+                    last_connection_attempt = int(time.time())
                     conn, addr = x.accept()
                     if self.ssl_key_file:
                         try:
