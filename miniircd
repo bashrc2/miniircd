@@ -1032,6 +1032,10 @@ class Client:
             self.set_password(self.nickname.decode('utf-8'), arguments[0].decode('utf-8'))
 
         def identify_handler() -> None:
+            if int(time.time()) - self.server.last_login_failure < 3:
+                # impose a minimum time between login failures
+                # to mitigate brute force attempts
+                return
             if len(arguments) < 1:
                 self.reply_461(b"IDENTIFY")
                 self.is_operator = False
@@ -1047,6 +1051,7 @@ class Client:
             if self.__msg_nickserv_identify(nickname, password):
                 self.message((f"Identify success").encode())
             else:
+                self.server.last_login_failure = int(time.time())
                 self.message((f"Identify failed").encode())
 
         def filter_handler() -> None:
@@ -1502,6 +1507,7 @@ class Server:
         self.bouncer_size = 512
         self.total_members = 0
         self.name: bytes
+        self.last_login_failure = 0
 
         if args.password_file:
             with open(args.password_file, "r") as fp:
