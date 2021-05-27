@@ -488,17 +488,42 @@ class Client:
             return None
         return line.split(' ')[1]
 
+    def _constant_time_string_check(self, string1: str, string2: str) -> bool:
+        """Compares two string and returns if they are the same
+        using a constant amount of time
+        See https://sqreen.github.io/DevelopersSecurityBestPractices/
+        timing-attack/python
+        """
+        # strings must be of equal length
+        if len(string1) != len(string2):
+            return False
+        ctr = 0
+        matched = True
+        for ch in string1:
+            if ch != string2[ctr]:
+                matched = False
+            else:
+                # this is to make the timing more even
+                # and not provide clues
+                matched = matched
+            ctr += 1
+        return matched
+
     def __is_op(self, nickname: str, salt: str, hashed_password: str) -> bool:
         line = self.__password_entry(nickname)
         if not line:
             return False
-        return line == nickname + ' ' + salt + ' ' + hashed_password + ' oper\n'
+        expected = \
+            nickname + ' ' + salt + ' ' + hashed_password + ' oper\n'
+        return self._constant_time_string_check(line, expected)
 
     def __is_registered(self, nickname: str, salt: str, hashed_password: str) -> bool:
         line = self.__password_entry(nickname)
         if not line:
             return False
-        return line == nickname + ' ' + salt + ' ' + hashed_password + '\n'
+        expected = \
+            nickname + ' ' + salt + ' ' + hashed_password + '\n'
+        return self._constant_time_string_check(line, expected)
 
     def __identify(self, nickname: str, salt: str, hashed_password: str) -> int:
         if self.__is_op(nickname, salt, hashed_password):
