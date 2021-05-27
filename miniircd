@@ -515,7 +515,8 @@ class Client:
             return False
         expected = \
             nickname + ' ' + salt + ' ' + hashed_password + ' oper\n'
-        return self._constant_time_string_check(line, expected)
+        return self._constant_time_string_check("{:<1024}".format(line),
+                                                "{:<1024}".format(expected))
 
     def __is_registered(self, nickname: str, salt: str, hashed_password: str) -> bool:
         line = self.__password_entry(nickname)
@@ -523,7 +524,8 @@ class Client:
             return False
         expected = \
             nickname + ' ' + salt + ' ' + hashed_password + '\n'
-        return self._constant_time_string_check(line, expected)
+        return self._constant_time_string_check("{:<1024}".format(line),
+                                                "{:<1024}".format(expected))
 
     def __identify(self, nickname: str, salt: str, hashed_password: str) -> int:
         if self.__is_op(nickname, salt, hashed_password):
