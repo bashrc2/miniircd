@@ -669,6 +669,9 @@ class Client:
                 )
             self.reply(b"323 %s :End of LIST" % self.nickname)
 
+        def history_handler() -> None:
+            self.server.bouncer_replay(self.nickname)
+
         def filters_handler() -> None:
             if not self.oper:
                 self.reply(b"481 %s :Filters list permission denied" % (self.nickname))
@@ -1369,6 +1372,7 @@ class Client:
             b"DROP": drop_handler,
             b"FILTER": filter_handler,
             b"FILTERS": filters_handler,
+            b"HISTORY": history_handler,
             b"IDENTIFY": identify_handler,
             b"ISON": ison_handler,
             b"JOIN": join_handler,
