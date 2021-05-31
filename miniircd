@@ -1142,6 +1142,58 @@ class Client:
                     % (self.nickname, targetname)
                 )
 
+        def relaymsg_handler() -> None:
+            if len(arguments) == 0:
+                self.reply(
+                    b"411 %s :No channel given (%s)"
+                    % (self.nickname, command)
+                )
+                return
+            if len(arguments) == 1:
+                self.reply(
+                    b"411 %s :No spoofed nickname given (%s)"
+                    % (self.nickname, command)
+                )
+                return
+            if len(arguments) == 2:
+                self.reply(
+                    b"411 %s :No message given (%s)"
+                    % (self.nickname, command)
+                )
+                return
+            if not self.oper:
+                self.reply(b"481 %s :Permission denied" % (self.nickname))
+                self.message((f"Only operators can relay messages").encode())
+                return
+            if self.__quiet:
+                self.reply(b"481 %s :You are muted" % (self.nickname))
+                return
+            if self.spoofednickname:
+                self.nickname = self.spoofednickname
+                self.spoofednickname = None
+            targetname = arguments[0]
+            spoofednickname = arguments[1]
+            message = b''
+            for index in range(2, len(arguments)):
+                if index > 2:
+                    message += b' '
+                message += arguments[index]
+            client = self.server.get_client(spoofednickname)
+            if client:
+                self.reply(b"481 %s :Conflicting spoofed client nickname" % (spoofednickname))
+                return
+            if self.server.has_channel(targetname):
+                channel = self.server.get_channel(targetname)
+                nickname = self.nickname
+                self.spoofednickname = self.nickname
+                self.nickname = spoofednickname
+                self.message_channel(
+                    channel, command, b"%s :%s" % (channel.name, message)
+                )
+                self.nickname = self.spoofednickname
+                self.spoofednickname = None
+                self.channel_log(channel, message)
+
         def part_handler() -> None:
             if len(arguments) < 1:
                 self.reply_461(b"PART")
@@ -1334,6 +1386,7 @@ class Client:
             b"PRIVMSG": notice_and_privmsg_handler,
             b"QUIT": quit_handler,
             b"REGISTER": register_handler,
+            b"RELAYMSG": relaymsg_handler,
             b"SETPASSWORD": setpassword_handler,
             b"TOPIC": topic_handler,
             b"WALLOPS": wallops_handler,
