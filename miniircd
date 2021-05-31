@@ -159,6 +159,7 @@ class Client:
         # irc_lower(Channel name) --> Channel
         self.channels: Dict[bytes, Channel] = {}
         self.nickname = b""
+        self.spoofednickname = None
         self.user = b""
         self.realname = b""
         self.is_operator = False
