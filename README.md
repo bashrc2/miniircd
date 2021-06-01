@@ -192,7 +192,9 @@ Messages can be filtered. Filters can also contain wildcard characters.
 To assign other operators who can help with moderation:
 
     /mode +o #channel [nickname]
-	
+
+Other operators may use **-o** to relinquish operator status, but may not be deopped by other moderators.
+
 To only allow registered users:
 
     /mode +M #channel
