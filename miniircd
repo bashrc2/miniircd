@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Joel Rosdahl <joel@rosdahl.net>
-# Bob Mottram <bob@freedombone.net>
+# Bob Mottram <bob@libreserver.org>
 
 import logging
 import os
