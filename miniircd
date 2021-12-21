@@ -133,7 +133,7 @@ class Channel:
             return
         self.server.write_lock = True
         try:
-            with open(self._state_path, "w+") as state_file:
+            with open(self._state_path, "w+", encoding='utf-8') as state_file:
                 state_file.write("topic = %r\n" % self.topic)
                 state_file.write("key = %r\n" % self.key)
         except OSError:
@@ -208,7 +208,7 @@ class Client:
         self.server.write_lock = True
         lines = []
         try:
-            with open(self.server.passwords_filename, 'r') as fp:
+            with open(self.server.passwords_filename, 'r', encoding='utf-8') as fp:
                 fileStr = fp.read()
                 lines = fileStr.split('\n')
         except OSError:
@@ -242,7 +242,7 @@ class Client:
                     continue
                 fileStr += line + '\n'
             try:
-                with open(self.server.passwords_filename, 'w+') as fp:
+                with open(self.server.passwords_filename, 'w+', encoding='utf-8') as fp:
                     fp.write(fileStr)
             except OSError:
                 print('Unable to write password to ' +
@@ -462,7 +462,7 @@ class Client:
         if not os.path.isfile(self.server.passwords_filename):
             writeMode = 'w+'
         try:
-            with open(self.server.passwords_filename, writeMode) as fp:
+            with open(self.server.passwords_filename, writeMode, encoding='utf-8') as fp:
                 fp.write(line + '\n')
         except OSError:
             print('Register password failed ' +
@@ -477,7 +477,7 @@ class Client:
             return None
         lines = []
         try:
-            with open(self.server.passwords_filename, 'r') as fp:
+            with open(self.server.passwords_filename, 'r', encoding='utf-8') as fp:
                 lines = fp.readlines()
         except OSError:
             print('Unable to read passwords ' +
@@ -596,7 +596,7 @@ class Client:
         hashed_password = password_hash(salt, password)
         new_password_file = None
         try:
-            with open(self.server.passwords_filename, 'r') as fp:
+            with open(self.server.passwords_filename, 'r', encoding='utf-8') as fp:
                 lines = fp.readlines()
                 new_password_file = ''
                 for line in lines:
@@ -615,7 +615,7 @@ class Client:
             pass
         if new_password_file:
             try:
-                with open(self.server.passwords_filename, 'w+') as fp:
+                with open(self.server.passwords_filename, 'w+', encoding='utf-8') as fp:
                     fp.write(new_password_file)
             except OSError:
                 self.message((f"Failed to change password").encode())
@@ -1644,7 +1644,7 @@ class Server:
         if not os.path.isfile(filename):
             return
         try:
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding='utf-8') as f:
                 listStr = f.read()
                 loadedList = listStr.split('\n')
                 for entryStr in loadedList:
@@ -1671,7 +1671,7 @@ class Server:
             else:
                 listStr += s + b'\n'
         try:
-            with open(filename, 'w+') as f:
+            with open(filename, 'w+', encoding='utf-8') as f:
                 f.write(listStr)
         except OSError:
             print('Unable to write list ' + str(filename))
@@ -1682,7 +1682,7 @@ class Server:
         removed = False
         new_password_file = None
         try:
-            with open(self.passwords_filename, 'r') as fp:
+            with open(self.passwords_filename, 'r', encoding='utf-8') as fp:
                 lines = fp.readlines()
                 new_password_file = ''
                 for line in lines:
@@ -1702,7 +1702,7 @@ class Server:
             self.write_lock = False
             return False
         try:
-            with open(self.passwords_filename, 'w+') as fp:
+            with open(self.passwords_filename, 'w+', encoding='utf-8') as fp:
                 fp.write(new_password_file)
         except OSError:
             print('Unable to write passwords while deleting ' +
@@ -1714,7 +1714,7 @@ class Server:
 
     def account_is_operator(self, nickname: str) -> bool:
         try:
-            with open(self.passwords_filename, 'r') as fp:
+            with open(self.passwords_filename, 'r', encoding='utf-8') as fp:
                 lines = fp.readlines()
                 for line in lines:
                     if not line.endswith('\n'):
