@@ -208,7 +208,7 @@ class Client:
         self.server.write_lock = True
         lines = []
         try:
-            with open(self.server.passwords_filename, encoding='utf-8', 'r') as fp:
+            with open(self.server.passwords_filename, 'r') as fp:
                 fileStr = fp.read()
                 lines = fileStr.split('\n')
         except OSError:
@@ -477,7 +477,7 @@ class Client:
             return None
         lines = []
         try:
-            with open(self.server.passwords_filename, encoding='utf-8', 'r') as fp:
+            with open(self.server.passwords_filename, 'r') as fp:
                 lines = fp.readlines()
         except OSError:
             print('Unable to read passwords ' +
@@ -596,7 +596,7 @@ class Client:
         hashed_password = password_hash(salt, password)
         new_password_file = None
         try:
-            with open(self.server.passwords_filename, encoding='utf-8', 'r') as fp:
+            with open(self.server.passwords_filename, 'r') as fp:
                 lines = fp.readlines()
                 new_password_file = ''
                 for line in lines:
@@ -1644,7 +1644,7 @@ class Server:
         if not os.path.isfile(filename):
             return
         try:
-            with open(filename, encoding='utf-8', 'r') as f:
+            with open(filename, 'r') as f:
                 listStr = f.read()
                 loadedList = listStr.split('\n')
                 for entryStr in loadedList:
@@ -1682,7 +1682,7 @@ class Server:
         removed = False
         new_password_file = None
         try:
-            with open(self.passwords_filename, encoding='utf-8', 'r') as fp:
+            with open(self.passwords_filename, 'r') as fp:
                 lines = fp.readlines()
                 new_password_file = ''
                 for line in lines:
@@ -1714,7 +1714,7 @@ class Server:
 
     def account_is_operator(self, nickname: str) -> bool:
         try:
-            with open(self.passwords_filename, encoding='utf-8', 'r') as fp:
+            with open(self.passwords_filename, 'r') as fp:
                 lines = fp.readlines()
                 for line in lines:
                     if not line.endswith('\n'):
