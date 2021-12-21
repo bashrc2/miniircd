@@ -418,8 +418,8 @@ class Client:
                         continue
                 else:
                     self.reply(
-                        b"451 %s %s :Not registered"
-                        % (self.nickname, channel.name)
+                        b"451 %s %s :Not registered %s %s"
+                        % (self.nickname, channel.name, self.nickname, channel.name)
                     )
                     continue
             names_prefix = b"353 %s = %s :" % (self.nickname, channelname)
@@ -559,7 +559,7 @@ class Client:
     def __msg_nickserv_identify(self, nickname: str, password: str) -> bool:
         salt = self.__get_salt(nickname)
         if not salt:
-            self.reply(b"406 %s :Not registered" % self.nickname)
+            self.reply(b"406 %s :Not registered %s" % (self.nickname, self.nickname))
             self.is_operator = False
             self.is_registered = False
             return False
@@ -580,7 +580,7 @@ class Client:
     def set_password(self, nickname: str, password: str) -> bool:
         salt = self.__get_salt(nickname)
         if not salt:
-            self.reply(b"406 %s :Not registered" % self.nickname)
+            self.reply(b"406 %s :Not registered %s" % (self.nickname, self.nickname))
             self.message((f"Not registered").encode())
             self.server.write_lock = False
             return False
@@ -1054,7 +1054,7 @@ class Client:
                 return
             if not self.oper:
                 if not self.is_registered:
-                    self.reply(b"406 %s :Not registered" % self.nickname)
+                    self.reply(b"406 %s :Not registered %s" % (self.nickname, self.nickname))
                     self.message((f"Not registered").encode())
                     self.server.write_lock = False
                     return
