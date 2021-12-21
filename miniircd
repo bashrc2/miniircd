@@ -137,7 +137,7 @@ class Channel:
                 state_file.write("topic = %r\n" % self.topic)
                 state_file.write("key = %r\n" % self.key)
         except OSError:
-            print('Unable to write state ' + self._state_path)
+            print('Unable to write state ' + str(self._state_path))
             pass
         self.server.write_lock = False
 
@@ -213,7 +213,7 @@ class Client:
                 lines = fileStr.split('\n')
         except OSError:
             print('Unable to read oper password from ' +
-                  self.server.passwords_filename)
+                  str(self.server.passwords_filename))
             self.server.write_lock = False
             return
 
@@ -246,7 +246,7 @@ class Client:
                     fp.write(fileStr)
             except OSError:
                 print('Unable to write password to ' +
-                      self.server.passwords_filename)
+                      str(self.server.passwords_filename))
                 self.server.write_lock = False
                 return
         self.is_operator = value
@@ -466,7 +466,7 @@ class Client:
                 fp.write(line + '\n')
         except OSError:
             print('Register password failed ' +
-                  self.server.passwords_filename + ' ' + writeMode)
+                  str(self.server.passwords_filename) + ' ' + str(writeMode))
             self.server.write_lock = False
             return False
         self.server.write_lock = False
@@ -481,7 +481,7 @@ class Client:
                 lines = fp.readlines()
         except OSError:
             print('Unable to read passwords ' +
-                  self.server.passwords_filename)
+                  str(self.server.passwords_filename))
             return None
         for line in lines:
             if line.startswith(nickname + ' '):
@@ -611,7 +611,7 @@ class Client:
                     new_password_file += new_line
         except OSError:
             print('Unable to read passwords set ' +
-                  self.server.passwords_filename)
+                  str(self.server.passwords_filename))
             pass
         if new_password_file:
             try:
@@ -1655,7 +1655,7 @@ class Server:
                     if entryStr not in lst:
                         lst.append(entryStr)
         except OSError:
-            print('Unable to read list ' + filename)
+            print('Unable to read list ' + str(filename))
             pass
 
     def _updateList(self, lst: [], filename: str, decode: bool) -> None:
@@ -1674,7 +1674,7 @@ class Server:
             with open(filename, 'w+') as f:
                 f.write(listStr)
         except OSError:
-            print('Unable to write list ' + filename)
+            print('Unable to write list ' + str(filename))
             pass
         self.write_lock = False
 
@@ -1696,7 +1696,7 @@ class Server:
                     new_password_file += new_line
         except OSError:
             print('Unable to read passwords while deleting ' +
-                  self.passwords_filename)
+                  str(self.passwords_filename))
             pass
         if not new_password_file or not removed:
             self.write_lock = False
@@ -1706,7 +1706,7 @@ class Server:
                 fp.write(new_password_file)
         except OSError:
             print('Unable to write passwords while deleting ' +
-                  self.passwords_filename)
+                  str(self.passwords_filename))
             self.write_lock = False
             return False
         self.write_lock = False
@@ -1724,7 +1724,7 @@ class Server:
                             return True
         except OSError:
             print('Unable to read passwords is oper ' +
-                  self.passwords_filename)
+                  str(self.passwords_filename))
             pass
         return False
 
